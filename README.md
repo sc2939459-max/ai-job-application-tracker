@@ -1,30 +1,36 @@
-# AI Job Application Tracker
+AI JOB APPLICATION TRACKER
+────────────────────────────
+Search • Track • Analyze • Improve
 
-An AI-powered full-stack platform for managing job applications,
-tracking application progress, analyzing resumes against job
-descriptions, preparing for interviews, and monitoring recruiter
-communication.
+> An AI-powered full-stack platform for managing job applications,
+> analyzing resumes, tracking interviews, and monitoring recruiter
+> communication.
 
-## 🚀 Live Demo
+[🚀 Live Demo](YOUR_LINK) · [📖 Documentation](YOUR_LINK)
 
-Coming soon
+![AI Job Application Tracker](screenshots/dashboard.png)
 
 ## 📸 Screenshots
 
 ### Dashboard
-[Add dashboard screenshot]
+
+![Dashboard](screenshots/dashboard.png)
 
 ### Job Search
-[Add job search screenshot]
+
+![Job Search](screenshots/job-search.png)
 
 ### Application Tracking
-[Add application tracking screenshot]
+
+![Application Tracking](screenshots/application-tracking.png)
 
 ### AI Resume Analysis
-[Add AI analysis screenshot]
 
-### Interview Preparation
-[Add interview screenshot]
+![AI Resume Analysis](screenshots/ai-analysis.png)
+
+### Interview Tracking
+
+![Interview Tracking](screenshots/interviews.png)
 
 ## ✨ Features
 
