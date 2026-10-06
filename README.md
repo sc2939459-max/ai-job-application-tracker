@@ -1,45 +1,94 @@
-# AI Job Application Tracker — Phase 2
+# AI Job Application Tracker
 
-React + FastAPI + PostgreSQL job application tracker.
+An AI-powered full-stack platform for managing job applications,
+tracking application progress, analyzing resumes against job
+descriptions, preparing for interviews, and monitoring recruiter
+communication.
 
-## Phase 2 features
-- Authentication with JWT
-- Persistent PostgreSQL data
-- Application CRUD
-- Search and status filtering
-- Dashboard analytics
-- Response, interview and offer rates
-- Interview scheduling and deletion
-- Resume version tracking
-- Responsive desktop/mobile layout
-- Docker Compose local development
+## 🚀 Live Demo
 
-## Run
-```bash
-docker compose build --no-cache
-docker compose up
-```
+Coming soon
 
-Open http://localhost:5173
+## 📸 Screenshots
 
-API docs: http://localhost:8000/docs
+### Dashboard
+[Add dashboard screenshot]
 
-## Important
-Do not use `docker compose down -v` unless you intentionally want to delete the local PostgreSQL volume.
+### Job Search
+[Add job search screenshot]
 
-Phase 3 will add resume parsing, job-description analysis, AI match scoring and skill-gap recommendations.
+### Application Tracking
+[Add application tracking screenshot]
 
+### AI Resume Analysis
+[Add AI analysis screenshot]
 
-## Phase 3 — AI Analysis
+### Interview Preparation
+[Add interview screenshot]
 
-Phase 3 adds PDF/DOCX resume parsing, automatic skill extraction and normalization, job-description skill extraction, explainable resume-to-job matching, skill-gap recommendations, and persistent AI analysis history. The matching engine runs locally and requires no paid AI API. It uses a weighted 80% skill-overlap + 20% high-signal keyword score so results are reproducible and easy to explain in a project demo.
+## ✨ Features
 
-### Phase 3 API
-- `POST /api/ai/resume/upload` — upload and parse PDF/DOCX resume
-- `GET /api/ai/resume/{resume_id}` — retrieve resume analysis
-- `POST /api/ai/job-description` — analyze pasted job description
-- `GET /api/ai/job-descriptions` — list analyzed JDs
-- `POST /api/ai/match` — calculate match score and skill gaps
-- `GET /api/ai/matches` — recent match history
+- 🔐 JWT authentication
+- 🔎 Job search and filtering
+- 📋 Job application tracking
+- 📊 Application status dashboard
+- 📄 Resume upload and management
+- 🤖 AI resume/job matching
+- 🎯 Skill-gap analysis
+- 💼 Interview tracking
+- 📧 Recruiter email integration
+- 📈 Job market insights
+- 🐳 Docker support
+- 🗄️ PostgreSQL database
 
-Uploaded resumes are persisted in `backend/uploads/resumes` and mounted into the Docker backend container.
+## 🧠 AI Resume Analysis
+
+The AI analysis module compares a resume with a job description and
+provides:
+
+- Match score
+- Matched skills
+- Missing skills
+- Keyword matches
+- Improvement recommendations
+
+## 🏗️ Tech Stack
+
+### Frontend
+- React
+- JavaScript
+- Chart.js
+- Axios
+- CSS
+
+### Backend
+- Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- JWT Authentication
+
+### DevOps
+- Docker
+- Docker Compose
+- Git/GitHub
+
+## 📁 Project Structure
+
+```text
+ai-job-application-tracker/
+│
+├── backend/
+│   ├── app/
+│   ├── uploads/
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── docker-compose.yml
+├── README.md
+└── .gitignore
