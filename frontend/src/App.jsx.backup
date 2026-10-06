@@ -1,0 +1,786 @@
+import React, { useEffect, useMemo, useState } from "react";
+import api from "./api";
+import {
+  Doughnut,
+  Bar,
+  Line,
+} from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+} from "chart.js";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement
+);
+
+const STATUSES = [
+  "Wishlist",
+  "Applied",
+  "Screening",
+  "Interview",
+  "Offer",
+  "Rejected",
+  "Withdrawn",
+];
+
+function apiError(err, fallback = "Something went wrong.") {
+  return err?.response?.data?.detail || err?.message || fallback;
+}
+
+function Auth({ onLogin }) {
+  const [mode, setMode] = useState("login");
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const endpoint = mode === "login" ? "/auth/login" : "/auth/register";
+      const r = await api.post(endpoint, form);
+      localStorage.setItem("token", r.data.access_token);
+      onLogin(r.data.user);
+    } catch (err) {
+      setError(apiError(err, "Request failed."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-page">
+      <form className="auth-card" onSubmit={submit}>
+        <div className="brand-mark">JT</div>
+        <h1>AI Job Tracker</h1>
+        <p>Turn your job search into measurable data.</p>
+        {mode === "register" && (
+          <input
+            placeholder="Full name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            minLength={2}
+            required
+          />
+        )}
+        <input
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password (8+ characters)"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          minLength={8}
+          maxLength={72}
+          required
+        />
+        {error && <div className="error">{error}</div>}
+        <button disabled={loading}>
+          {loading ? "Please wait..." : mode === "login" ? "Login" : "Create account"}
+        </button>
+        <button
+          type="button"
+          className="link"
+          onClick={() => {
+            setError("");
+            setMode(mode === "login" ? "register" : "login");
+          }}
+        >
+          {mode === "login" ? "Create an account" : "Already have an account?"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ErrorBoundary({ children }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const handler = () => setFailed(true);
+    window.addEventListener("error", handler);
+    return () => window.removeEventListener("error", handler);
+  }, []);
+  if (failed) {
+    return (
+      <div className="page-error">
+        <h2>Page failed to render</h2>
+        <p>Refresh the page. Your saved database data is not affected.</p>
+        <button onClick={() => window.location.reload()}>Refresh</button>
+      </div>
+    );
+  }
+  return children;
+}
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("dashboard");
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setChecking(false);
+      return;
+    }
+    api.get("/auth/me")
+      .then((r) => setUser(r.data))
+      .catch(() => localStorage.removeItem("token"))
+      .finally(() => setChecking(false));
+  }, []);
+
+  if (checking) return <div className="loading-screen">Loading JobTracker...</div>;
+  if (!user) return <Auth onLogin={setUser} />;
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setPage("dashboard");
+  };
+
+  const navItems = [
+    ["dashboard", "Dashboard", "▦"],
+    ["applications", "Applications", "▤"],
+    ["interviews", "Interviews", "◷"],
+    ["resumes", "Resumes", "▣"],
+    ["ai", "AI Analysis", "✦"],
+  ];
+
+  return (
+    <ErrorBoundary>
+      <div className="app">
+        <aside>
+          <div className="brand">
+            <div className="brand-mark">JT</div>
+            <span>JobTracker</span>
+          </div>
+
+          <div className="nav-label">WORKSPACE</div>
+          <nav>
+            {navItems.map(([key, label, icon]) => (
+              <button
+                type="button"
+                key={key}
+                className={page === key ? "active" : ""}
+                onClick={() => setPage(key)}
+                aria-current={page === key ? "page" : undefined}
+              >
+                <span className="nav-icon">{icon}</span>
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="sidebar-user">
+            <div className="avatar">{(user.name || "U").charAt(0).toUpperCase()}</div>
+            <div>
+              <strong>{user.name}</strong>
+              <small>{user.email}</small>
+            </div>
+          </div>
+          <button type="button" className="logout" onClick={logout}>Logout</button>
+        </aside>
+
+        <main>
+          <header>
+            <div>
+              <div className="eyebrow">JOB SEARCH WORKSPACE</div>
+              <h1>{navItems.find((x) => x[0] === page)?.[1]}</h1>
+              <span>Welcome back, {user.name}.</span>
+            </div>
+            <div className="sync-pill"><i /> Data synced</div>
+          </header>
+
+          {page === "dashboard" && <Dashboard />}
+          {page === "applications" && <Applications />}
+          {page === "interviews" && <Interviews />}
+          {page === "resumes" && <Resumes />}
+          {page === "ai" && <AIAnalysis />}
+        </main>
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+function Dashboard() {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.get("/dashboard")
+      .then((r) => setD(r.data))
+      .catch((err) => setError(apiError(err)));
+  }, []);
+
+  if (error) return <section className="panel"><div className="error">{error}</div></section>;
+  if (!d) return <div className="loading">Loading dashboard...</div>;
+
+  const submitted = d.submitted_applications ?? 0;
+  const responseRate = d.response_rate ?? 0;
+  const interviewRate = d.interview_rate ?? 0;
+  const offerRate = d.offer_rate ?? 0;
+
+  const breakdown = (d.status_breakdown || []).filter((x) => x.count > 0);
+  const labels = breakdown.map((x) => x.status);
+  const values = breakdown.map((x) => x.count);
+
+  return (
+    <>
+      <div className="cards">
+        <Card t="Total applications" v={d.total_applications} sub={`${submitted} submitted`} />
+        <Card t="Response rate" v={`${responseRate}%`} sub="Employer responses" />
+        <Card t="Interview rate" v={`${interviewRate}%`} sub={`${d.interviews} interview records`} />
+        <Card t="Offer rate" v={`${offerRate}%`} sub={`${d.offers} offers`} />
+      </div>
+
+      <section className="analytics-heading">
+        <h2>Application analytics</h2>
+        <p>Rates use submitted applications as the denominator. Wishlist items are excluded.</p>
+      </section>
+
+      <div className="grid2">
+        <section className="panel">
+          <h3>Status distribution</h3>
+          {values.length ? (
+            <div className="chart"><Doughnut data={{ labels, datasets: [{ data: values }] }} /></div>
+          ) : (
+            <Empty text="Add an application to see status distribution." />
+          )}
+        </section>
+
+        <section className="panel">
+          <h3>Pipeline snapshot</h3>
+          <Bar
+            data={{
+              labels: ["Submitted", "Interviews", "Offers"],
+              datasets: [{ label: "Count", data: [submitted, d.interviews, d.offers] }],
+            }}
+            options={{ responsive: true, maintainAspectRatio: false }}
+          />
+        </section>
+      </div>
+
+      <section className="panel">
+        <h3>Upcoming interviews</h3>
+        {d.upcoming_interviews?.length ? (
+          <table>
+            <thead><tr><th>Date</th><th>Company</th><th>Round</th></tr></thead>
+            <tbody>
+              {d.upcoming_interviews.map((i) => (
+                <tr key={i.id}>
+                  <td>{new Date(i.interview_date).toLocaleString()}</td>
+                  <td><strong>{i.company}</strong><small>{i.role}</small></td>
+                  <td>{i.round_name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <Empty text="No interviews scheduled." />}
+      </section>
+    </>
+  );
+}
+
+function Card({ t, v, sub }) {
+  return <div className="card"><span>{t}</span><strong>{v}</strong><small>{sub}</small></div>;
+}
+
+function Empty({ text }) {
+  return <div className="empty">{text}</div>;
+}
+
+function Applications() {
+  const [jobs, setJobs] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("");
+  const [show, setShow] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await api.get("/jobs", { params: { search, status: filter } });
+      setJobs(r.data);
+      setError("");
+    } catch (err) {
+      setError(apiError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [search, filter]);
+
+  const remove = async (id) => {
+    if (!window.confirm("Delete this application?")) return;
+    try {
+      await api.delete(`/jobs/${id}`);
+      load();
+    } catch (err) {
+      setError(apiError(err));
+    }
+  };
+
+  return (
+    <>
+      {error && <div className="error page-alert">{error}</div>}
+      <div className="toolbar">
+        <input
+          placeholder="Search company, role, location..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="">All statuses</option>
+          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button type="button" onClick={() => { setEditing(null); setShow(true); }}>+ Add application</button>
+      </div>
+
+      {show && (
+        <JobForm
+          job={editing}
+          close={() => setShow(false)}
+          saved={load}
+        />
+      )}
+
+      <section className="panel">
+        <div className="panel-head"><h3>Applications</h3><span>{jobs.length} shown</span></div>
+        {loading ? <div className="loading">Loading applications...</div> : jobs.length ? (
+          <table>
+            <thead><tr><th>Company</th><th>Role</th><th>Status</th><th>Applied</th><th>Skills</th><th>Actions</th></tr></thead>
+            <tbody>
+              {jobs.map((j) => (
+                <tr key={j.id}>
+                  <td><strong>{j.company}</strong><small>{j.location || "Location not set"}</small></td>
+                  <td>{j.role}</td>
+                  <td><span className={`badge status-${j.status.toLowerCase()}`}>{j.status}</span></td>
+                  <td>{j.applied_date}</td>
+                  <td>{(j.required_skills || []).join(", ") || "—"}</td>
+                  <td className="nowrap">
+                    <button type="button" className="small" onClick={() => { setEditing(j); setShow(true); }}>Edit</button>
+                    <button type="button" className="small danger" onClick={() => remove(j.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <Empty text="No applications found. Add your first application." />}
+      </section>
+    </>
+  );
+}
+
+function JobForm({ job, close, saved }) {
+  const [f, setF] = useState(job || {
+    company: "", role: "", location: "", job_url: "", source: "LinkedIn",
+    status: "Applied", applied_date: new Date().toISOString().slice(0, 10),
+    salary: "", notes: "", required_skills: [], resume_version_id: null
+  });
+  const [skills, setSkills] = useState((job?.required_skills || []).join(", "));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSaving(true);
+    const data = {
+      ...f,
+      required_skills: skills.split(",").map((x) => x.trim()).filter(Boolean),
+      resume_version_id: f.resume_version_id || null,
+    };
+    try {
+      if (job) await api.put(`/jobs/${job.id}`, data);
+      else await api.post("/jobs", data);
+      close();
+      saved();
+    } catch (err) {
+      setError(apiError(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal">
+      <form className="modal-card" onSubmit={save}>
+        <h2>{job ? "Edit" : "Add"} application</h2>
+        {error && <div className="error">{error}</div>}
+        <div className="form-grid">
+          {["company", "role", "location", "job_url", "source", "salary"].map((k) => (
+            <input
+              key={k}
+              placeholder={k.replace("_", " ")}
+              value={f[k] || ""}
+              onChange={(e) => setF({ ...f, [k]: e.target.value })}
+              required={k === "company" || k === "role"}
+            />
+          ))}
+          <select value={f.status} onChange={(e) => setF({ ...f, status: e.target.value })}>
+            {STATUSES.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <input type="date" value={f.applied_date} onChange={(e) => setF({ ...f, applied_date: e.target.value })} />
+          <input className="wide" placeholder="Required skills, comma separated (Python, SQL, React)" value={skills} onChange={(e) => setSkills(e.target.value)} />
+          <textarea className="wide" placeholder="Notes" value={f.notes || ""} onChange={(e) => setF({ ...f, notes: e.target.value })} />
+        </div>
+        <div className="actions">
+          <button type="button" className="secondary" onClick={close}>Cancel</button>
+          <button disabled={saving}>{saving ? "Saving..." : "Save application"}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Interviews() {
+  const [items, setItems] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    try {
+      const [ir, jr] = await Promise.all([api.get("/interviews"), api.get("/jobs")]);
+      setItems(ir.data);
+      setJobs(jr.data);
+      setError("");
+    } catch (err) {
+      setError(apiError(err));
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  return (
+    <>
+      {error && <div className="error page-alert">{error}</div>}
+      <div className="toolbar"><button type="button" onClick={() => setShow(true)}>+ Add interview</button></div>
+      {show && <InterviewForm jobs={jobs} close={() => setShow(false)} saved={load} />}
+      <section className="panel">
+        <div className="panel-head"><h3>Interview schedule</h3><span>{items.length} records</span></div>
+        {items.length ? (
+          <table>
+            <thead><tr><th>Date</th><th>Company</th><th>Round</th><th>Type</th><th>Result</th><th></th></tr></thead>
+            <tbody>
+              {items.map((i) => (
+                <tr key={i.id}>
+                  <td>{new Date(i.interview_date).toLocaleString()}</td>
+                  <td><strong>{jobs.find((j) => j.id === i.job_id)?.company || "—"}</strong></td>
+                  <td>{i.round_name}</td>
+                  <td>{i.type || "—"}</td>
+                  <td><span className="badge">{i.result}</span></td>
+                  <td><button type="button" className="small danger" onClick={async () => { await api.delete(`/interviews/${i.id}`); load(); }}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <Empty text="No interviews yet. Schedule your first interview." />}
+      </section>
+    </>
+  );
+}
+
+function InterviewForm({ jobs, close, saved }) {
+  const [f, setF] = useState({
+    job_id: "", round_name: "Technical", interview_date: "",
+    interviewer: "", type: "Online", notes: "", result: "Scheduled"
+  });
+  const [error, setError] = useState("");
+  const save = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/interviews", {
+        ...f,
+        job_id: Number(f.job_id),
+        interview_date: new Date(f.interview_date).toISOString()
+      });
+      close();
+      saved();
+    } catch (err) { setError(apiError(err)); }
+  };
+  return (
+    <div className="modal">
+      <form className="modal-card" onSubmit={save}>
+        <h2>Schedule interview</h2>
+        {error && <div className="error">{error}</div>}
+        <select value={f.job_id} onChange={(e) => setF({ ...f, job_id: e.target.value })} required>
+          <option value="">Select job</option>
+          {jobs.map((j) => <option value={j.id} key={j.id}>{j.company} — {j.role}</option>)}
+        </select>
+        <input placeholder="Round name" value={f.round_name} onChange={(e) => setF({ ...f, round_name: e.target.value })} required />
+        <input type="datetime-local" value={f.interview_date} onChange={(e) => setF({ ...f, interview_date: e.target.value })} required />
+        <input placeholder="Interviewer" value={f.interviewer} onChange={(e) => setF({ ...f, interviewer: e.target.value })} />
+        <input placeholder="Type (Online/Phone/In-person)" value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })} />
+        <select value={f.result} onChange={(e) => setF({ ...f, result: e.target.value })}>
+          <option>Scheduled</option><option>Passed</option><option>Rejected</option><option>Pending</option>
+        </select>
+        <textarea placeholder="Notes" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
+        <div className="actions"><button type="button" className="secondary" onClick={close}>Cancel</button><button>Save interview</button></div>
+      </form>
+    </div>
+  );
+}
+
+function Resumes() {
+  const [items, setItems] = useState([]);
+  const [f, setF] = useState({ name: "", skills: "" });
+  const [error, setError] = useState("");
+
+  const load = () => api.get("/resumes").then((r) => setItems(r.data)).catch((err) => setError(apiError(err)));
+  useEffect(() => { load(); }, []);
+
+  const save = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/resumes", {
+        name: f.name,
+        skills: f.skills.split(",").map((x) => x.trim()).filter(Boolean)
+      });
+      setF({ name: "", skills: "" });
+      load();
+    } catch (err) { setError(apiError(err)); }
+  };
+
+  return (
+    <>
+      {error && <div className="error page-alert">{error}</div>}
+      <section className="panel">
+        <h3>Add resume version</h3>
+        <form className="inline-form" onSubmit={save}>
+          <input placeholder="Version name e.g. Data Analyst v2" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required />
+          <input placeholder="Skills: Python, SQL, Pandas, React" value={f.skills} onChange={(e) => setF({ ...f, skills: e.target.value })} />
+          <button>Add version</button>
+        </form>
+      </section>
+      <section className="panel">
+        <div className="panel-head"><h3>Resume versions</h3><span>{items.length} versions</span></div>
+        {items.length ? (
+          <table>
+            <thead><tr><th>Name</th><th>Skills</th><th>Created</th></tr></thead>
+            <tbody>
+              {items.map((r) => (
+                <tr key={r.id}>
+                  <td><strong>{r.name}</strong><small>{r.file_name || "Manual version"}</small></td>
+                  <td>{(r.skills || []).join(", ") || "—"}</td>
+                  <td>{new Date(r.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <Empty text="No resume versions yet. Add one above." />}
+      </section>
+      <section className="info-panel">
+        <strong>Phase 2 note</strong>
+        <p>Resume version tracking is ready. Actual PDF/DOCX parsing and AI matching will be added in Phase 3.</p>
+      </section>
+    </>
+  );
+}
+
+
+function AIAnalysis() {
+  const [resumes, setResumes] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [resumeName, setResumeName] = useState("");
+  const [resumeFile, setResumeFile] = useState(null);
+  const [jobId, setJobId] = useState("");
+  const [resumeId, setResumeId] = useState("");
+  const [jdTitle, setJdTitle] = useState("");
+  const [jdText, setJdText] = useState("");
+  const [jdId, setJdId] = useState("");
+  const [jdResult, setJdResult] = useState(null);
+  const [match, setMatch] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try {
+      const [rr, jr] = await Promise.all([api.get("/resumes"), api.get("/jobs")]);
+      setResumes(rr.data);
+      setJobs(jr.data);
+      if (!resumeId && rr.data.length) setResumeId(String(rr.data[0].id));
+      if (!jobId && jr.data.length) setJobId(String(jr.data[0].id));
+    } catch (err) {
+      setError(apiError(err));
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const uploadResume = async (e) => {
+    e.preventDefault();
+    if (!resumeFile) return setError("Choose a PDF or DOCX resume.");
+    setBusy(true); setError(""); setMatch(null);
+    try {
+      const form = new FormData();
+      form.append("file", resumeFile);
+      const name = resumeName.trim() || resumeFile.name.replace(/\.(pdf|docx)$/i, "");
+      const r = await api.post(`/ai/resume/upload?name=${encodeURIComponent(name)}`, form, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setResumeId(String(r.data.resume.id));
+      setResumeName("");
+      setResumeFile(null);
+      document.getElementById("resume-file-input").value = "";
+      await load();
+    } catch (err) {
+      setError(apiError(err, "Resume parsing failed."));
+    } finally { setBusy(false); }
+  };
+
+  const analyzeJD = async (e) => {
+    e.preventDefault();
+    if (jdText.trim().length < 30) return setError("Paste at least 30 characters of the job description.");
+    setBusy(true); setError(""); setMatch(null);
+    try {
+      const r = await api.post("/ai/job-description", {
+        job_id: jobId ? Number(jobId) : null,
+        title: jdTitle || (jobs.find(j => j.id === Number(jobId))?.role || "Job Description"),
+        text: jdText
+      });
+      setJdId(String(r.data.id));
+      setJdResult(r.data);
+    } catch (err) {
+      setError(apiError(err, "Job description analysis failed."));
+    } finally { setBusy(false); }
+  };
+
+  const runMatch = async () => {
+    if (!resumeId) return setError("Upload/select an AI-parsed resume.");
+    if (!jobId && !jdId) return setError("Select a job or analyze a job description first.");
+    setBusy(true); setError("");
+    try {
+      const r = await api.post("/ai/match", {
+        resume_id: Number(resumeId),
+        job_id: jobId ? Number(jobId) : null,
+        job_description_id: jdId ? Number(jdId) : null
+      });
+      setMatch(r.data);
+    } catch (err) {
+      setError(apiError(err, "Match analysis failed."));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <>
+      {error && <div className="error page-alert">{error}</div>}
+
+      <section className="ai-hero">
+        <div>
+          <div className="ai-kicker">INTELLIGENCE LAYER</div>
+          <h2>Resume & Job Match Analyzer</h2>
+          <p>Upload your resume, analyze a job description, and get an explainable match score with missing skills.</p>
+        </div>
+        <div className="ai-badge">AI READY</div>
+      </section>
+
+      <div className="grid2">
+        <section className="panel">
+          <h3>1. Analyze your resume</h3>
+          <p className="muted">PDF/DOCX text is extracted and technical skills are detected automatically.</p>
+          <form onSubmit={uploadResume} className="stack-form">
+            <input placeholder="Resume name e.g. Software Engineer v2" value={resumeName} onChange={e => setResumeName(e.target.value)} />
+            <input id="resume-file-input" type="file" accept=".pdf,.docx" onChange={e => setResumeFile(e.target.files?.[0] || null)} required />
+            <button disabled={busy}>{busy ? "Processing..." : "Upload & Analyze Resume"}</button>
+          </form>
+
+          <div className="divider" />
+          <label className="field-label">Existing AI-parsed resume</label>
+          <select value={resumeId} onChange={e => setResumeId(e.target.value)}>
+            <option value="">Select resume</option>
+            {resumes.map(r => <option value={r.id} key={r.id}>{r.name}{r.file_name ? ` — ${r.file_name}` : ""}</option>)}
+          </select>
+        </section>
+
+        <section className="panel">
+          <h3>2. Analyze job description</h3>
+          <p className="muted">Paste a JD to extract required skills and high-signal keywords.</p>
+          <form onSubmit={analyzeJD} className="stack-form">
+            <select value={jobId} onChange={e => setJobId(e.target.value)}>
+              <option value="">Optional: link to an application</option>
+              {jobs.map(j => <option value={j.id} key={j.id}>{j.company} — {j.role}</option>)}
+            </select>
+            <input placeholder="JD title" value={jdTitle} onChange={e => setJdTitle(e.target.value)} />
+            <textarea className="jd-box" placeholder="Paste the complete job description here..." value={jdText} onChange={e => setJdText(e.target.value)} required />
+            <button disabled={busy}>{busy ? "Analyzing..." : "Analyze Job Description"}</button>
+          </form>
+          {jdResult && (
+            <div className="analysis-mini">
+              <strong>{jdResult.title}</strong>
+              <span>{jdResult.character_count} characters</span>
+              <div>{jdResult.detected_skills.map(s => <span className="skill-chip" key={s}>{s}</span>)}</div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <section className="panel match-panel">
+        <div className="panel-head">
+          <div>
+            <h3>3. Generate match score</h3>
+            <p className="muted">Uses 80% skill overlap + 20% job-keyword overlap. This is explainable, not a black box.</p>
+          </div>
+          <button onClick={runMatch} disabled={busy || !resumeId || (!jobId && !jdId)}>
+            {busy ? "Analyzing..." : "Run AI Match"}
+          </button>
+        </div>
+
+        {match ? (
+          <div className="match-result">
+            <div className="score-card">
+              <span>Overall match</span>
+              <strong>{match.score}%</strong>
+              <small>Skills {match.skill_score}% · Keywords {match.keyword_score}%</small>
+            </div>
+            <div className="match-columns">
+              <div>
+                <h4>Matched skills</h4>
+                <div>{match.matched_skills.length ? match.matched_skills.map(s => <span className="skill-chip good" key={s}>✓ {s}</span>) : <Empty text="No matched skills yet." />}</div>
+              </div>
+              <div>
+                <h4>Skill gaps</h4>
+                <div>{match.missing_skills.length ? match.missing_skills.map(s => <span className="skill-chip missing" key={s}>✕ {s}</span>) : <span className="success-text">No detected skill gaps.</span>}</div>
+              </div>
+              <div>
+                <h4>Recommendations</h4>
+                <ul>{match.recommendations.map((x, i) => <li key={i}>{x}</li>)}</ul>
+              </div>
+            </div>
+          </div>
+        ) : <Empty text="Upload a resume and analyze a job description, then run the match." />}
+      </section>
+
+      <section className="info-panel">
+        <strong>Phase 3 architecture</strong>
+        <p>PDF/DOCX extraction → skill normalization → job-description analysis → explainable match scoring → persistent analysis history. No paid AI API is required for this phase.</p>
+      </section>
+    </>
+  );
+}
+
+export default App;
