@@ -709,9 +709,9 @@ Feedback, suggestions, and contributions are welcome.
 
 ## 📄 License
 
-This project currently does not include an open-source license.
+This project is licensed under the MIT License.
 
-If you plan to make the project open source, add a `LICENSE` file and specify the license terms here.
+See the [LICENSE](./LICENSE) file for the complete license terms.
 
 ---
 
