@@ -13,3 +13,4 @@ pypdf==6.0.0
 python-docx==1.2.0
 httpx==0.24.0
 python-multipart==0.0.20
+vercel>=0.5.0
