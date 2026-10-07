@@ -3050,8 +3050,31 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
     : null;
 
   const recentJobs = [...jobs]
-    .sort((a, b) => String(b.applied_date || "").localeCompare(String(a.applied_date || "")))
+    .sort((a, b) => String(b.applied_date || b.created_at || "").localeCompare(String(a.applied_date || a.created_at || "")))
     .slice(0, 5);
+
+  const hasResume = Boolean(latestResume);
+  const hasJobRequirements = jobs.some((job) => Array.isArray(job?.required_skills) && job.required_skills.length);
+
+  const dashboardMatchedSkills = hasResume && hasJobRequirements
+    ? [...new Set(
+        jobs.flatMap((job) => Array.isArray(job?.required_skills) ? job.required_skills : [])
+          .map(normalizeMatchSkill)
+          .filter((skill) => skill && resumeSkillSet.has(skill))
+      )]
+    : [];
+
+  const dashboardMissingSkills = hasResume && hasJobRequirements
+    ? [...new Set(
+        jobs.flatMap((job) => Array.isArray(job?.required_skills) ? job.required_skills : [])
+          .map(normalizeMatchSkill)
+          .filter((skill) => skill && !resumeSkillSet.has(skill))
+      )]
+    : [];
+
+  const dashboardSuggestion = dashboardMissingSkills.length
+    ? `Consider adding evidence of ${dashboardMissingSkills.slice(0, 2).map((skill) => skill.replace(/\b\w/g, (letter) => letter.toUpperCase())).join(" and ")} through relevant projects or experience.`
+    : "Your current resume covers the detected skills in your tracked job requirements.";
 
   const filteredJobs = skillLocation === "All Locations"
     ? jobs
@@ -3121,12 +3144,29 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
     }],
   };
 
+  // Personalized skill comparison. Never use hardcoded resume/job skills here.
+  const jobSkillDemand = {};
+  jobs.forEach((job) => {
+    const requiredSkills = Array.isArray(job?.required_skills) ? job.required_skills : [];
+    [...new Set(requiredSkills.map(normalizeMatchSkill).filter(Boolean))].forEach((skill) => {
+      jobSkillDemand[skill] = (jobSkillDemand[skill] || 0) + 1;
+    });
+  });
+
+  const topRequiredSkills = Object.entries(jobSkillDemand)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  const radarLabels = topRequiredSkills.map(([skill]) =>
+    skill.replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+  const maxDemand = Math.max(1, ...topRequiredSkills.map(([, count]) => count));
   const radarData = {
-    labels: ["Python", "SQL", "Pandas", "React", "FastAPI", "Docker", "AWS", "JavaScript"],
+    labels: radarLabels,
     datasets: [
       {
         label: "Your Skills",
-        data: [88, 82, 72, 55, 40, 35, 28, 65],
+        data: topRequiredSkills.map(([skill]) => (resumeSkillSet.has(skill) ? 100 : 0)),
         borderColor: "#1683ff",
         backgroundColor: "rgba(22,131,255,.18)",
         borderWidth: 2,
@@ -3134,7 +3174,7 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
       },
       {
         label: "Job Requirements",
-        data: [78, 88, 82, 78, 76, 72, 65, 80],
+        data: topRequiredSkills.map(([, count]) => Math.round((count / maxDemand) * 100)),
         borderColor: "#f59e0b",
         backgroundColor: "rgba(245,158,11,.12)",
         borderWidth: 2,
@@ -3404,7 +3444,21 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
         </Panel>
 
         <Panel title="Skill Match Overview" className="radar-panel">
-          <div className="chart-box radar-chart"><Radar data={radarData} options={radarOptions} /></div>
+          {!hasResume ? (
+            <div className="dashboard-empty-state radar-empty-state">
+              <strong>Upload a resume to see your skill match.</strong>
+              <span>This comparison uses your saved resume skills and tracked job requirements.</span>
+              <button className="view-button" onClick={() => onNavigate("resumes")}>Upload Resume →</button>
+            </div>
+          ) : !hasJobRequirements ? (
+            <div className="dashboard-empty-state radar-empty-state">
+              <strong>No job requirements available yet.</strong>
+              <span>Search or track jobs to compare your resume skills against them.</span>
+              <button className="view-button" onClick={() => onNavigate("opportunities-search")}>Search Jobs →</button>
+            </div>
+          ) : (
+            <div className="chart-box radar-chart"><Radar data={radarData} options={radarOptions} /></div>
+          )}
         </Panel>
 
         <Panel title="Top 10 In-Demand Tech Skills" className="skills-panel">
@@ -3422,13 +3476,17 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
                 <tr><th>Job Title</th><th>Company</th><th>Location</th><th>Match Score</th><th>Action</th></tr>
               </thead>
               <tbody>
-                {(recentJobs.length ? recentJobs : [
-                  { role: "Data Analyst", company: "Google", location: "Bengaluru" },
-                  { role: "Python Developer", company: "Accenture", location: "Hyderabad" },
-                  { role: "Data Scientist", company: "TCS", location: "Bengaluru" },
-                  { role: "Backend Developer", company: "Infosys", location: "Pune" },
-                  { role: "ML Engineer", company: "Wipro", location: "Hyderabad" },
-                ]).map((job, index) => (
+                {!hasResume ? (
+                  <tr>
+                    <td colSpan="5">
+                      <div className="dashboard-empty-state">
+                        <strong>Upload a resume to see personalized job matches.</strong>
+                        <span>Your resume skills will be compared with the requirements of your tracked jobs.</span>
+                        <button className="view-button" onClick={() => onNavigate("resumes")}>Upload Resume →</button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : recentJobs.length ? recentJobs.map((job, index) => (
                   <tr key={job.id || `${job.company}-${index}`}>
                     <td><strong>{job.role || job.title}</strong></td>
                     <td>{job.company}</td>
@@ -3436,16 +3494,48 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
                     <td><span className={`score-pill ${scoreClass(job)}`}>{displayScore(job)}</span></td>
                     <td><button className="view-button" onClick={() => onNavigate("applications")}>View</button></td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="5">
+                      <div className="dashboard-empty-state">
+                        <strong>No tracked jobs to match yet.</strong>
+                        <span>Search jobs and save or track opportunities to see personalized matches here.</span>
+                        <button className="view-button" onClick={() => onNavigate("opportunities-search")}>Search Jobs →</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </Panel>
 
         <Panel title="💡 AI Feedback & Skill Gaps" className="feedback-panel">
-          <div className="feedback-box matched"><span>✓</span><div><strong>Matched Skills</strong><p>Python, SQL, Pandas, Git</p></div></div>
-          <div className="feedback-box missing"><span>×</span><div><strong>Missing Skills</strong><p>FastAPI, Docker, AWS, React</p></div></div>
-          <div className="feedback-box suggestion"><span>!</span><div><strong>AI Suggestion</strong><p>Add FastAPI and Docker projects to improve your match score for Software Engineer roles.</p></div></div>
+          {!hasResume ? (
+            <div className="feedback-box suggestion">
+              <span>!</span>
+              <div>
+                <strong>Upload a resume to unlock personalized feedback</strong>
+                <p>Your matched skills, missing skills, and improvement suggestions will be calculated from your resume and tracked job requirements.</p>
+                <button className="view-button" onClick={() => onNavigate("resumes")}>Upload Resume →</button>
+              </div>
+            </div>
+          ) : !hasJobRequirements ? (
+            <div className="feedback-box suggestion">
+              <span>!</span>
+              <div>
+                <strong>Search or track jobs to generate skill gaps</strong>
+                <p>Your resume is available, but there are no job requirements to compare against yet.</p>
+                <button className="view-button" onClick={() => onNavigate("opportunities-search")}>Search Jobs →</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="feedback-box matched"><span>✓</span><div><strong>Matched Skills</strong><p>{dashboardMatchedSkills.length ? dashboardMatchedSkills.slice(0, 8).map((skill) => skill.replace(/\b\w/g, (letter) => letter.toUpperCase())).join(", ") : "No matching skills detected yet."}</p></div></div>
+              <div className="feedback-box missing"><span>×</span><div><strong>Missing Skills</strong><p>{dashboardMissingSkills.length ? dashboardMissingSkills.slice(0, 8).map((skill) => skill.replace(/\b\w/g, (letter) => letter.toUpperCase())).join(", ") : "No missing skills detected."}</p></div></div>
+              <div className="feedback-box suggestion"><span>!</span><div><strong>AI Suggestion</strong><p>{dashboardSuggestion}</p></div></div>
+            </>
+          )}
         </Panel>
       </section>
 
