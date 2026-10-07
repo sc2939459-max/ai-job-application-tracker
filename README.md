@@ -699,14 +699,36 @@ analysis, application tracking, and third-party API integration.
 
 ------------------------------------------------------------------------
 
-## ⭐ If You Find This Project Useful
+## ⭐ Support the Project
 
-If this project is useful or interesting, consider starring the
-repository and exploring the implementation.
+If you find AI Job Tracker useful or interesting, consider giving the repository a ⭐ on GitHub.
 
-------------------------------------------------------------------------
+Feedback, suggestions, and contributions are welcome.
+
+---
 
 ## 📄 License
 
-Add a project license here when you are ready to publish the repository
-under a specific open-source license.
+This project currently does not include an open-source license.
+
+If you plan to make the project open source, add a `LICENSE` file and specify the license terms here.
+
+---
+
+## 👨‍💻 Author
+
+### Sunil Maddipatla
+
+Computer Science graduate interested in:
+
+- Python Development
+- Data Analytics
+- Software Engineering
+- Full-Stack Development
+- AI-powered applications
+
+### Technical Skills
+
+Python · SQL · PostgreSQL · Pandas · JavaScript
+React · HTML · CSS · FastAPI · SQLAlchemy
+Git · GitHub · REST APIs · Data Analysis
