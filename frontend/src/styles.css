@@ -9185,3 +9185,162 @@ textarea:focus-visible {
   .recruiter-message-footer { align-items:flex-start; flex-direction:column; }
   .recruiter-automation-notice { align-items:flex-start; flex-direction:column; }
 }
+
+/* Dashboard layout and empty-state polish */
+.phase4-main .middle-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.phase4-main .middle-grid > .phase4-panel {
+  min-width: 0;
+}
+
+.phase4-main .dashboard-empty-state {
+  display: flex;
+  min-height: 210px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  border: 1px dashed #d5e0ee;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fbff, #f3f7fd);
+  color: #65758d;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.phase4-main .dashboard-empty-state strong {
+  color: #203450;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.phase4-main .dashboard-empty-state span {
+  max-width: 48ch;
+  font-size: 12px;
+}
+
+.phase4-main .radar-empty-state {
+  min-height: 235px;
+  align-items: center;
+  text-align: center;
+}
+
+.phase4-main .radar-empty-state span {
+  max-width: 34ch;
+}
+
+.phase4-main .view-button {
+  display: inline-flex;
+  min-height: 36px;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  padding: 8px 13px;
+  border: 1px solid #1676e8;
+  border-radius: 8px;
+  background: #1683ff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.phase4-main .view-button:hover {
+  transform: translateY(-1px);
+  border-color: #0968d7;
+  background: #0968d7;
+  box-shadow: 0 4px 10px rgba(22, 131, 255, 0.2);
+}
+
+.phase4-main .view-button:focus-visible {
+  outline: 3px solid rgba(22, 131, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.phase4-main .feedback-box {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 13px;
+  border: 1px solid #e5ebf3;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #63738a;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.phase4-main .feedback-box > span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eaf3ff;
+  color: #1676e8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.phase4-main .feedback-box > div {
+  min-width: 0;
+}
+
+.phase4-main .feedback-box strong {
+  display: block;
+  color: #233650;
+  font-size: 12px;
+}
+
+.phase4-main .feedback-box p {
+  margin: 5px 0 0;
+  font-size: 11px;
+}
+
+.phase4-main .feedback-box.matched {
+  border-color: #d8efe7;
+  background: #f2fbf7;
+}
+
+.phase4-main .feedback-box.matched > span {
+  background: #ddf5e9;
+  color: #13805c;
+}
+
+.phase4-main .feedback-box.missing {
+  border-color: #f2e2d2;
+  background: #fff9f2;
+}
+
+.phase4-main .feedback-box.missing > span {
+  background: #fff0de;
+  color: #bd6a20;
+}
+
+@media (max-width: 1300px) {
+  .phase4-main .middle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .phase4-main .middle-grid .feedback-panel {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 850px) {
+  .phase4-main .middle-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

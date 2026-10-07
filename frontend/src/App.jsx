@@ -3470,44 +3470,38 @@ function Dashboard({ user, accounts, onNavigate, onLogout, onSwitchAccount, prof
 
       <section className="phase4-grid middle-grid">
         <Panel title="Recent Job Matches" className="matches-panel" action={<button className="action-blue-button compact-action" onClick={() => onNavigate("applications")}>View all →</button>}>
-          <div className="matches-table-wrap">
-            <table className="matches-table">
-              <thead>
-                <tr><th>Job Title</th><th>Company</th><th>Location</th><th>Match Score</th><th>Action</th></tr>
-              </thead>
-              <tbody>
-                {!hasResume ? (
-                  <tr>
-                    <td colSpan="5">
-                      <div className="dashboard-empty-state">
-                        <strong>Upload a resume to see personalized job matches.</strong>
-                        <span>Your resume skills will be compared with the requirements of your tracked jobs.</span>
-                        <button className="view-button" onClick={() => onNavigate("resumes")}>Upload Resume →</button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : recentJobs.length ? recentJobs.map((job, index) => (
-                  <tr key={job.id || `${job.company}-${index}`}>
-                    <td><strong>{job.role || job.title}</strong></td>
-                    <td>{job.company}</td>
-                    <td>{job.location || "—"}</td>
-                    <td><span className={`score-pill ${scoreClass(job)}`}>{displayScore(job)}</span></td>
-                    <td><button className="view-button" onClick={() => onNavigate("applications")}>View</button></td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="5">
-                      <div className="dashboard-empty-state">
-                        <strong>No tracked jobs to match yet.</strong>
-                        <span>Search jobs and save or track opportunities to see personalized matches here.</span>
-                        <button className="view-button" onClick={() => onNavigate("opportunities-search")}>Search Jobs →</button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          {!hasResume ? (
+            <div className="dashboard-empty-state">
+              <strong>Upload a resume to see personalized job matches.</strong>
+              <span>Your resume skills will be compared with the requirements of your tracked jobs.</span>
+              <button className="view-button" onClick={() => onNavigate("resumes")}>Upload Resume →</button>
+            </div>
+          ) : recentJobs.length ? (
+            <div className="matches-table-wrap">
+              <table className="matches-table">
+                <thead>
+                  <tr><th>Job Title</th><th>Company</th><th>Location</th><th>Match Score</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  {recentJobs.map((job, index) => (
+                    <tr key={job.id || `${job.company}-${index}`}>
+                      <td><strong>{job.role || job.title}</strong></td>
+                      <td>{job.company}</td>
+                      <td>{job.location || "—"}</td>
+                      <td><span className={`score-pill ${scoreClass(job)}`}>{displayScore(job)}</span></td>
+                      <td><button className="view-button" onClick={() => onNavigate("applications")}>View</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="dashboard-empty-state">
+              <strong>No tracked jobs to match yet.</strong>
+              <span>Search jobs and save or track opportunities to see personalized matches here.</span>
+              <button className="view-button" onClick={() => onNavigate("opportunities-search")}>Search Jobs →</button>
+            </div>
+          )}
         </Panel>
 
         <Panel title="💡 AI Feedback & Skill Gaps" className="feedback-panel">
