@@ -6059,6 +6059,10 @@ function Resumes() {
       setError("Please choose a resume file.");
       return;
     }
+    if (upload.file.size > 4 * 1024 * 1024) {
+      setError("Resume files must be no larger than 4 MB.");
+      return;
+    }
 
     setSaving(true);
     setMessage("");
@@ -6125,9 +6129,18 @@ function Resumes() {
     } catch (err) {
       console.error("Resume upload failed:", err);
 
+      const detail = err.response?.data?.detail;
+      const reason = Array.isArray(detail)
+        ? detail.map((item) => item.msg).join(", ")
+        : typeof detail === "string"
+          ? detail
+          : "";
+
       setError(
-        err.response?.data?.detail ||
-          "Unable to upload resume."
+        reason ||
+          (err.response?.status
+            ? `Resume upload failed (HTTP ${err.response.status}).`
+            : "Unable to reach the resume upload service. Please try again.")
       );
     } finally {
       setSaving(false);
@@ -6437,8 +6450,8 @@ function Resumes() {
                 </strong>
                 <small>
                   {upload.file
-                    ? "File ready to upload"
-                    : "PDF, DOC or DOCX · click to browse"}
+                    ? `${(upload.file.size / (1024 * 1024)).toFixed(1)} MB · 4 MB maximum`
+                    : "PDF, DOC or DOCX · 4 MB maximum"}
                 </small>
               </span>
               <span className="resume-file-action">Browse files</span>

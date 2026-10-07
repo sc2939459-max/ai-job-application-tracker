@@ -509,10 +509,17 @@ GOOGLE_CLIENT_SECRET
 GOOGLE_REDIRECT_URI
 GOOGLE_TOKEN_ENCRYPTION_KEY
 FRONTEND_URL
+BLOB_READ_WRITE_TOKEN
 ```
 
 The repository should contain placeholder values in `.env.example`, not
 production secrets.
+
+For Vercel deployments, connect a **private Vercel Blob store** and expose
+its `BLOB_READ_WRITE_TOKEN` to the backend service. Resume uploads are stored
+privately in Blob; local development continues to use `backend/uploads/`.
+Resume uploads are limited to 4 MB to stay below Vercel's function request
+body limit.
 
 Also keep these out of Git:
 

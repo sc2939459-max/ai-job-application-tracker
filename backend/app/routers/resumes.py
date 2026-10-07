@@ -1,8 +1,12 @@
+import os
 import re
-import uuid
+import tempfile
 import mimetypes
+import uuid
 from pathlib import Path
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import (
     APIRouter,
     Depends,
@@ -13,6 +17,7 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from starlette.background import BackgroundTask
 
 from ..database import get_db
 from ..deps import get_current_user
@@ -49,6 +54,15 @@ router = APIRouter(
 # ============================================================
 
 UPLOAD_DIR = Path("uploads")
+BLOB_API_URL = "https://blob.vercel-storage.com"
+BLOB_API_VERSION = "11"
+MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "4"))
+if MAX_UPLOAD_MB < 1:
+    raise ValueError("MAX_UPLOAD_MB must be at least 1.")
+MAX_UPLOAD_BYTES = min(
+    MAX_UPLOAD_MB,
+    4 if os.getenv("VERCEL") else MAX_UPLOAD_MB,
+) * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
     ".pdf",
@@ -778,6 +792,178 @@ def validate_file_path(
     return path
 
 
+def _blob_token() -> str:
+    token = os.getenv("BLOB_READ_WRITE_TOKEN", "")
+    if not token:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Resume storage is not configured. "
+                "Connect a Vercel Blob store and set "
+                "BLOB_READ_WRITE_TOKEN."
+            ),
+        )
+    return token
+
+
+def _stored_blob_url(file_path: str, user_id: int) -> str:
+    prefix = "vercel-blob:"
+    if not file_path.startswith(prefix):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid stored resume location.",
+        )
+
+    url = file_path[len(prefix):]
+    parsed = urlparse(url)
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or not parsed.hostname.endswith(".private.blob.vercel-storage.com")
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or not parsed.path.startswith(f"/resumes/{user_id}/")
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid stored resume location.",
+        )
+    return url
+
+
+async def upload_blob(
+    pathname: str,
+    content: bytes,
+    content_type: str,
+    user_id: int,
+) -> str:
+    token = _blob_token()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.put(
+                BLOB_API_URL,
+                params={"pathname": pathname},
+                content=content,
+                headers={
+                    "authorization": f"Bearer {token}",
+                    "x-api-version": BLOB_API_VERSION,
+                    "x-content-type": content_type,
+                    "x-vercel-blob-access": "private",
+                    "x-add-random-suffix": "0",
+                },
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to resume storage.",
+        ) from exc
+
+    if response.status_code >= 300:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Resume storage rejected the upload "
+                f"(HTTP {response.status_code})."
+            ),
+        )
+
+    try:
+        blob_url = response.json().get("url")
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Resume storage returned an invalid upload response.",
+        ) from exc
+    if not isinstance(blob_url, str):
+        raise HTTPException(
+            status_code=502,
+            detail="Resume storage returned an invalid upload response.",
+        )
+
+    return _stored_blob_url(
+        f"vercel-blob:{blob_url}",
+        user_id,
+    )
+
+
+def download_blob_to_temp(blob_url: str, user_id: int, filename: str) -> Path:
+    validated_url = _stored_blob_url(
+        f"vercel-blob:{blob_url}",
+        user_id,
+    )
+    token = _blob_token()
+    try:
+        response = httpx.get(
+            validated_url,
+            headers={"authorization": f"Bearer {token}"},
+            timeout=30,
+            follow_redirects=True,
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not retrieve the stored resume.",
+        ) from exc
+
+    if response.status_code == 404:
+        raise HTTPException(
+            status_code=404,
+            detail="The stored resume file was not found.",
+        )
+    if response.status_code >= 300:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Resume storage could not retrieve the file "
+                f"(HTTP {response.status_code})."
+            ),
+        )
+
+    suffix = Path(filename).suffix or ".bin"
+    with tempfile.NamedTemporaryFile(
+        prefix="resume_",
+        suffix=suffix,
+        delete=False,
+    ) as temp_file:
+        temp_file.write(response.content)
+        return Path(temp_file.name)
+
+
+def delete_blob(blob_url: str, user_id: int) -> None:
+    validated_url = _stored_blob_url(
+        f"vercel-blob:{blob_url}",
+        user_id,
+    )
+    token = _blob_token()
+    try:
+        response = httpx.post(
+            f"{BLOB_API_URL}/delete",
+            json={"urls": [validated_url]},
+            headers={
+                "authorization": f"Bearer {token}",
+                "x-api-version": BLOB_API_VERSION,
+                "content-type": "application/json",
+            },
+            timeout=30,
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not connect to resume storage to delete the file.",
+        ) from exc
+
+    if response.status_code >= 300:
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Resume storage could not delete the file "
+                f"(HTTP {response.status_code})."
+            ),
+        )
+
+
 # ============================================================
 # GET ALL RESUMES
 # ============================================================
@@ -856,11 +1042,6 @@ async def upload_resume(
     user=Depends(get_current_user),
 ):
 
-    UPLOAD_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
     original_name = (
         file.filename
         or "resume"
@@ -891,26 +1072,24 @@ async def upload_resume(
     # --------------------------------------------------------
 
     try:
-
-        content = await file.read()
-
+        content = await file.read(MAX_UPLOAD_BYTES + 1)
     except Exception as exc:
-
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Unable to read uploaded "
-                f"file: {exc}"
-            ),
-        )
+            detail="Unable to read the uploaded resume file.",
+        ) from exc
 
     if not content:
-
         raise HTTPException(
             status_code=400,
+            detail="The uploaded resume file is empty.",
+        )
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
             detail=(
-                "The uploaded resume "
-                "file is empty."
+                "Resume files must be no larger than "
+                f"{MAX_UPLOAD_BYTES // (1024 * 1024)} MB."
             ),
         )
 
@@ -922,27 +1101,32 @@ async def upload_resume(
         f"{uuid.uuid4().hex}"
         f"{extension}"
     )
-
-    file_path = (
-        UPLOAD_DIR
-        / stored_filename
-    )
-
-    try:
-
-        file_path.write_bytes(
-            content
+    blob_url: str | None = None
+    if os.getenv("BLOB_READ_WRITE_TOKEN"):
+        blob_url = await upload_blob(
+            f"resumes/{user.id}/{stored_filename}",
+            content,
+            mimetypes.guess_type(original_name)[0]
+            or "application/octet-stream",
+            user.id,
         )
-
-    except OSError as exc:
-
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Unable to save uploaded "
-                f"resume: {exc}"
-            ),
+        file_path = f"vercel-blob:{blob_url}"
+    elif os.getenv("VERCEL"):
+        _blob_token()
+    else:
+        UPLOAD_DIR.mkdir(
+            parents=True,
+            exist_ok=True,
         )
+        local_path = UPLOAD_DIR / stored_filename
+        try:
+            local_path.write_bytes(content)
+        except OSError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="Unable to save the uploaded resume.",
+            ) from exc
+        file_path = str(local_path)
 
     # --------------------------------------------------------
     # Manual skills
@@ -980,23 +1164,15 @@ async def upload_resume(
         db.refresh(resume)
 
     except Exception as exc:
-
         db.rollback()
-
-        try:
-            file_path.unlink(
-                missing_ok=True
-            )
-        except OSError:
-            pass
-
+        if blob_url:
+            delete_blob(blob_url, user.id)
+        else:
+            Path(file_path).unlink(missing_ok=True)
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Unable to save resume "
-                f"record: {exc}"
-            ),
-        )
+            detail="Unable to save the resume record.",
+        ) from exc
 
     return resume
 
@@ -1054,44 +1230,42 @@ def analyze_existing_resume(
             ),
         )
 
-    file_path = validate_file_path(
-        resume.file_path
-    )
-
-    if not file_path.is_file():
-
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                "The resume file is missing "
-                "from the server."
-            ),
+    is_blob_file = resume.file_path.startswith("vercel-blob:")
+    if is_blob_file:
+        blob_url = _stored_blob_url(
+            resume.file_path,
+            user.id,
         )
-
-    # --------------------------------------------------------
-    # 3. Extract text
-    # --------------------------------------------------------
+        file_path = download_blob_to_temp(
+            blob_url,
+            user.id,
+            resume.file_name or "resume",
+        )
+    else:
+        file_path = validate_file_path(resume.file_path)
 
     try:
-
-        extracted_text = (
-            extract_resume_text(
-                file_path
+        if not file_path.is_file():
+            raise HTTPException(
+                status_code=404,
+                detail="The resume file is missing from storage.",
             )
-        )
 
-    except HTTPException:
-        raise
-
-    except Exception as exc:
-
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Unable to extract text "
-                f"from resume: {exc}"
-            ),
-        )
+        # --------------------------------------------------------
+        # 3. Extract text
+        # --------------------------------------------------------
+        try:
+            extracted_text = extract_resume_text(file_path)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unable to extract text from resume: {exc}",
+            ) from exc
+    finally:
+        if is_blob_file:
+            file_path.unlink(missing_ok=True)
 
     extracted_text = (
         extracted_text.strip()
@@ -1366,7 +1540,13 @@ def delete_resume(
     # Delete physical file
     # --------------------------------------------------------
 
-    if resume.file_path:
+    blob_url: str | None = None
+    if resume.file_path and resume.file_path.startswith("vercel-blob:"):
+        blob_url = _stored_blob_url(
+            resume.file_path,
+            user.id,
+        )
+    elif resume.file_path:
 
         try:
 
@@ -1423,6 +1603,19 @@ def delete_resume(
             ),
         )
 
+    if blob_url:
+        try:
+            delete_blob(blob_url, user.id)
+        except HTTPException as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "The resume record was deleted, but its stored file "
+                    "could not be removed. Contact support to clean up "
+                    "the orphaned file."
+                ),
+            ) from exc
+
     return {
         "message": (
             "Resume deleted successfully"
@@ -1461,18 +1654,26 @@ def open_resume_file(
             ),
         )
 
-    file_path = validate_file_path(
-        resume.file_path
-    )
+    is_blob_file = resume.file_path.startswith("vercel-blob:")
+    if is_blob_file:
+        blob_url = _stored_blob_url(
+            resume.file_path,
+            user.id,
+        )
+        file_path = download_blob_to_temp(
+            blob_url,
+            user.id,
+            resume.file_name or "resume",
+        )
+    else:
+        file_path = validate_file_path(resume.file_path)
 
     if not file_path.is_file():
-
+        if is_blob_file:
+            file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=404,
-            detail=(
-                "Resume file is missing "
-                "from the server."
-            ),
+            detail="Resume file is missing from storage.",
         )
 
     media_type = mimetypes.guess_type(
@@ -1490,8 +1691,12 @@ def open_resume_file(
         path=str(file_path),
         media_type=media_type,
         filename=(
-            resume.file_name
-            or file_path.name
+            resume.file_name or file_path.name
         ),
         content_disposition_type="inline",
+        background=(
+            BackgroundTask(file_path.unlink, missing_ok=True)
+            if is_blob_file
+            else None
+        ),
     )
