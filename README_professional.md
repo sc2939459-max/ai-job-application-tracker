@@ -5,7 +5,7 @@
 > analyzing resume-to-job compatibility, preparing for interviews, and
 > monitoring recruiter communication from one workspace.
 
-![AI Job Tracker](screenshots/home.png)
+![AI Job Tracker](screenshots/dashboard.png)
 
 ## Overview
 
@@ -208,7 +208,7 @@ application regains focus.
 
 ### Dashboard
 
-![Dashboard](screenshots/home.png)
+![Dashboard](screenshots/dashboard.png)
 
 The dashboard provides the main workspace for monitoring job-search
 activity.
