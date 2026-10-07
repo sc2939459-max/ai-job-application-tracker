@@ -1,45 +1,46 @@
-# AI Job Application Tracker — Phase 2
+# AI Job Tracker
 
-React + FastAPI + PostgreSQL job application tracker.
+> An AI-powered job search and application management platform
+> that helps candidates discover jobs, manage applications,
+> analyze resume compatibility, track interviews, and monitor
+> recruiter communication from one workspace.
 
-## Phase 2 features
-- Authentication with JWT
-- Persistent PostgreSQL data
-- Application CRUD
-- Search and status filtering
-- Dashboard analytics
-- Response, interview and offer rates
-- Interview scheduling and deletion
-- Resume version tracking
-- Responsive desktop/mobile layout
-- Docker Compose local development
+[Live Demo] [GitHub] [Documentation]
 
-## Run
-```bash
-docker compose build --no-cache
-docker compose up
-```
+## ✨ Product Overview
 
-Open http://localhost:5173
+AI Job Tracker brings the complete job-search workflow into one
+organized workspace.
 
-API docs: http://localhost:8000/docs
+Instead of managing jobs across spreadsheets, emails, notes,
+and separate tools, users can manage their entire application
+journey in one place.
 
-## Important
-Do not use `docker compose down -v` unless you intentionally want to delete the local PostgreSQL volume.
+## 🚀 Key Features
 
-Phase 3 will add resume parsing, job-description analysis, AI match scoring and skill-gap recommendations.
+🔎 Job Discovery
+Find relevant opportunities based on role, location and skills.
 
+📋 Application Tracking
+Track applications through Wishlist → Applying → Applied →
+Screening → Interview → Offer → Rejected.
 
-## Phase 3 — AI Analysis
+📄 Resume Management
+Upload and manage multiple resume versions.
 
-Phase 3 adds PDF/DOCX resume parsing, automatic skill extraction and normalization, job-description skill extraction, explainable resume-to-job matching, skill-gap recommendations, and persistent AI analysis history. The matching engine runs locally and requires no paid AI API. It uses a weighted 80% skill-overlap + 20% high-signal keyword score so results are reproducible and easy to explain in a project demo.
+🤖 AI Resume Analysis
+Compare resumes against job descriptions and identify:
+- Match score
+- Matched skills
+- Missing skills
+- Keyword alignment
+- Improvement recommendations
 
-### Phase 3 API
-- `POST /api/ai/resume/upload` — upload and parse PDF/DOCX resume
-- `GET /api/ai/resume/{resume_id}` — retrieve resume analysis
-- `POST /api/ai/job-description` — analyze pasted job description
-- `GET /api/ai/job-descriptions` — list analyzed JDs
-- `POST /api/ai/match` — calculate match score and skill gaps
-- `GET /api/ai/matches` — recent match history
+🎯 Interview Management
+Track interviews, preparation and upcoming rounds.
 
-Uploaded resumes are persisted in `backend/uploads/resumes` and mounted into the Docker backend container.
+📧 Recruiter Email Integration
+Connect Gmail and identify recruiter/application updates.
+
+📊 Dashboard
+Monitor application activity, interviews and job-search progress.
