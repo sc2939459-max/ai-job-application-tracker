@@ -1016,9 +1016,9 @@ Your feedback and suggestions are welcome.
 
 # 📄 License
 
-A specific open-source license has not yet been added to this repository.
+This project is licensed under the MIT License.
 
-If the project is intended to be distributed as open source, a license such as MIT can be added in the future.
+See the [LICENSE](./LICENSE) file for the complete license terms.
 
 ---
 
