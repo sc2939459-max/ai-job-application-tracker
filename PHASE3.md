@@ -43,7 +43,7 @@ Open http://localhost:5173.
 ## API docs
 
 After the backend starts:
-http://localhost:8000/docs
+http://localhost:8000/api/docs
 
 AI endpoints:
 - POST `/api/ai/resume/upload`

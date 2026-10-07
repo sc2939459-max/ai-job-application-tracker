@@ -38,6 +38,8 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="AI Job Application Tracker",
     version="1.0.0",
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
 )
 
 

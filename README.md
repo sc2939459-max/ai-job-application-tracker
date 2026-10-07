@@ -440,7 +440,7 @@ http://localhost:8000
 FastAPI documentation:
 
 ``` text
-http://localhost:8000/docs
+http://localhost:8000/api/docs
 ```
 
 ------------------------------------------------------------------------
