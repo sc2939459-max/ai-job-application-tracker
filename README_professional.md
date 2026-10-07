@@ -1,329 +1,397 @@
 # AI Job Tracker
 
-> An AI-powered job search and application management platform for
-> organizing job opportunities, tracking applications, managing resumes,
-> analyzing resume-to-job compatibility, preparing for interviews, and
-> monitoring recruiter communication from one workspace.
+> A full-stack job search and career management platform for organizing job opportunities, tracking applications, managing resumes, preparing for interviews, and analyzing resume-to-job compatibility.
 
-![AI Job Tracker](screenshots/dashboard.png)
+<p align="center">
+  <strong>Search jobs. Track applications. Analyze resumes. Prepare for interviews.</strong>
+</p>
 
-## Overview
+---
 
-AI Job Tracker is a full-stack web application designed to bring the
-complete job-search workflow into one focused workspace.
+## 📌 Overview
 
-Instead of managing job applications across spreadsheets, notes, email
-threads, and separate tools, the platform provides a central place to:
+AI Job Tracker is a full-stack web application designed to bring the complete job-search workflow into one focused workspace.
 
--   Discover and search for jobs
--   Save and track job applications
--   Manage application statuses
--   Upload and manage resume versions
--   Compare a resume with a real job description
--   Identify matched and missing skills
--   Review AI-generated resume recommendations
--   Manage interviews and preparation notes
--   Connect recruiter communication through Gmail
--   Monitor job-search activity from a dashboard
+Instead of managing job applications across spreadsheets, emails, browser tabs, resumes, and separate notes, the platform provides a centralized system for:
 
-The application is built with a React frontend and a Python/FastAPI
-backend, with PostgreSQL used for application data.
+- 🔎 Job discovery
+- 📋 Application tracking
+- 📄 Resume management
+- 🤖 Resume-to-job matching
+- 🎯 Skill-gap identification
+- 📅 Interview management
+- 🧠 Interview preparation
+- 📧 Recruiter email integration
+- 📊 Career and application insights
 
-------------------------------------------------------------------------
+The project was built to explore practical full-stack software engineering, data processing, API integration, authentication, resume analysis, and job-search automation.
+
+---
 
 ## ✨ Key Features
 
 ### 🔎 Job Search
 
-Search for relevant opportunities using role, location, and other
-job-search criteria.
+Search and explore relevant job opportunities from integrated job sources.
 
-The workflow is designed around the real application journey rather than
-treating a saved job as an application.
+Features include:
 
-**Application lifecycle:**
+- Job title / role search
+- Location filtering
+- Job source information
+- Job details
+- Required skills
+- Job description
+- External application links
+- Job-to-resume matching workflow
 
-``` text
-Wishlist
-   ↓
-Applying
-   ↓
-Applied
-   ↓
-Screening
-   ↓
-Interview
-   ↓
-Offer
-
-Alternative outcomes:
-Rejected / Withdrawn
-```
-
-------------------------------------------------------------------------
+---
 
 ### 📋 Application Tracking
 
-Keep job opportunities organized in one place.
+Keep your job applications organized from the initial search through the hiring process.
 
-Application records can contain information such as:
+Supported application stages include:
 
--   Company
--   Role
--   Location
--   Job URL
--   Source
--   Application status
--   Salary
--   Notes
--   Required skills
--   Resume version
-
-The application status model supports:
-
-``` text
+```text
 Wishlist
+   ↓
 Applying
+   ↓
 Applied
+   ↓
 Screening
+   ↓
 Interview
+   ↓
 Offer
-Rejected
-Withdrawn
+   ↓
+Rejected / Withdrawn
 ```
 
-------------------------------------------------------------------------
+The application workspace provides a centralized view of:
+
+- Company
+- Job role
+- Location
+- Application status
+- Application date
+- Salary information
+- Required skills
+- Notes
+- Resume version used
+
+---
 
 ### 📄 Resume Management
 
-Upload and manage resume versions from the Resumes section.
+Upload and manage multiple resume versions from one place.
 
-Supported resume formats include:
+Supported formats:
 
--   PDF
--   DOC
--   DOCX
+- PDF
+- DOC
+- DOCX
 
-Resume versions can be used as the input for AI-based resume analysis
-and job matching.
+Resume management allows different resume versions to be maintained for different job targets.
 
-------------------------------------------------------------------------
+This is useful when maintaining separate versions such as:
 
-### 🤖 AI Resume & Job Analysis
+```text
+Python Developer Resume
+Data Analyst Resume
+Software Developer Resume
+Full-Stack Developer Resume
+```
 
-The AI Analysis workspace allows a user to select a resume and paste a
-job description.
+---
 
-The workflow analyzes the job description and then compares it with the
-selected resume.
+### 🤖 Resume-to-Job Matching
 
-It provides information such as:
+The AI Analysis workspace compares a selected resume against a job description.
 
--   Resume/job match score
--   Matched skills
--   Missing skills
--   Job-description keywords
--   Recommendations
--   Detected job requirements
--   Recent match history
+The workflow is:
 
-The matching system uses technical skill alignment and job-description
-keyword alignment to calculate the match score.
+```text
+Select Resume
+      ↓
+Paste Job Description
+      ↓
+Analyze Job Requirements
+      ↓
+Detect Skills & Keywords
+      ↓
+Match Resume
+      ↓
+Generate Match Score
+      ↓
+Identify Matched & Missing Skills
+```
 
-------------------------------------------------------------------------
+The current matching engine uses:
 
-### 🎯 Resume Improvement Workflow
+- Technical skill alignment
+- Job-description keyword alignment
+- Detected resume skills
+- Detected job requirements
+- Match history
 
-The project includes an AI Resume Improvement workflow designed around a
-job-specific resume rather than blindly rewriting the original resume.
+### Current scoring model
 
-The intended improvement flow is:
+| Component | Weight |
+|-----------|-------:|
+| Technical skill alignment | 80% |
+| Job-description keyword alignment | 20% |
 
-1.  Rewrite the professional summary
-2.  Improve existing project and experience bullets
-3.  Identify missing skills separately
-4.  Avoid claiming skills or experience that are not actually present
-5.  Create a job-specific resume version
+The result includes:
 
-The original resume should remain separate from any improved version.
+- Overall match score
+- Skill score
+- Keyword score
+- Matched skills
+- Missing skills
+- Recommendations
+- Previous match history
 
-------------------------------------------------------------------------
+The system also tracks the same resume + job combination so repeated analysis does not unnecessarily create duplicate history entries.
 
-### 🗓 Interview Management
+---
 
-Track interviews associated with applications and keep preparation
-information organized.
+### 🎯 Skill Gap Identification
 
-Interview preparation includes areas such as:
+The matching system highlights skills that are present in the job description but missing from the selected resume.
 
--   Interview details
--   Preparation notes
--   STAR stories
--   Questions to ask the interviewer
--   Technical or project topics to revise
--   Interview-stage information
+Example:
 
-The application process can progress from application submission through
-interview rounds and eventually to an offer or other outcome.
+```text
+Matched Skills
+✓ Python
+✓ SQL
+✓ Pandas
+✓ REST API
 
-------------------------------------------------------------------------
+Missing Skills
+• Docker
+• AWS
+• Kubernetes
+```
+
+This helps identify areas that may require further learning or resume improvement.
+
+> Missing skills are treated as learning / improvement gaps and should not be falsely added to a resume.
+
+---
+
+### 📅 Interview Management
+
+Manage interviews associated with applications.
+
+Interview information can include:
+
+- Company
+- Job role
+- Interview round
+- Interview date
+- Interview type
+- Interviewer
+- Notes
+- Preparation information
+
+---
+
+### 🧠 Interview Preparation
+
+The application provides an interview preparation workspace based on the role and interview information.
+
+Preparation includes:
+
+- Pre-interview checklist
+- Role-specific questions
+- Technical preparation
+- HR preparation
+- Company research reminders
+- Resume review
+- Project preparation
+- Questions to ask the interviewer
+- Personal preparation notes
+
+Example preparation areas:
+
+```text
+✓ Research company
+✓ Review job description
+✓ Review resume
+✓ Prepare introduction
+✓ Practice technical questions
+✓ Prepare questions for interviewer
+✓ Test camera / microphone
+✓ Keep resume and portfolio ready
+```
+
+---
 
 ### 📧 Recruiter Messages & Gmail Integration
 
-The project includes recruiter-message integration designed to connect
-Gmail communication with application tracking.
+The project includes a Gmail integration workflow for recruiter and application-related messages.
 
-Relevant recruiter/application messages can be classified using signals
-such as:
+The intended workflow is:
 
-``` text
-Application received
-Application under review
-Interview invitation
-Offer letter
-Rejection / not moving forward
+```text
+Gmail
+  ↓
+Email Sync
+  ↓
+Recruiter Message Detection
+  ↓
+Email Classification
+  ↓
+Application Matching
+  ↓
+Application Status Update
 ```
 
-The goal is to reduce manual status updates while keeping the
-application record synchronized with recruiter communication.
+Relevant email signals can include:
 
-> Gmail/OAuth configuration requires environment variables and Google
-> Cloud configuration. Never commit real OAuth secrets or `.env` files
-> to GitHub.
+| Email signal | Application status |
+|--------------|-------------------|
+| Application received | Applied |
+| Application under review | Screening |
+| Interview invitation | Interview |
+| Offer letter | Offer |
+| Rejection notification | Rejected |
 
-------------------------------------------------------------------------
+The system is designed to use strong confirmation signals rather than changing application status from generic recruiter emails.
 
-### 📊 Dashboard
+---
 
-The dashboard provides a centralized view of job-search activity and
-helps users understand their current application pipeline.
-
-The application also supports synchronized refresh behavior so job and
-interview information can be refreshed when data changes or when the
-application regains focus.
-
-------------------------------------------------------------------------
-
-## 🖥️ Screenshots
+## 📸 Product Screenshots
 
 ### Dashboard
 
-![Dashboard](screenshots/dashboard.png)
+The main dashboard provides an overview of the job-search workspace, applications, interviews, resumes, and career activity.
 
-The dashboard provides the main workspace for monitoring job-search
-activity.
+![Dashboard](./screenshots/dashboard.png)
+
+---
 
 ### Job Search
 
-![Job Search](screenshots/job-search.png)
+Search and explore job opportunities based on role, location, and other filters.
 
-Search and discover opportunities using the job-search workspace.
+![Job Search](./screenshots/job-search.png)
 
-### Applications
+---
 
-![Applications](screenshots/applications.png)
+### Application Tracking
 
-Manage tracked applications and follow their current status.
+Track applications and monitor their current stage throughout the hiring process.
 
-### Interviews
+![Applications](./screenshots/applications.png)
 
-![Interviews](screenshots/interviews.png)
+---
 
-Review interviews and prepare for upcoming rounds.
+### Interview Management
+
+Manage upcoming interviews and interview-related information.
+
+![Interviews](./screenshots/interviews.png)
+
+---
 
 ### AI Resume Analysis
 
-![AI Analysis](screenshots/ai-analysis-1.png)
+Compare a resume against a job description and identify skill alignment.
 
-Select a resume and analyze it against a real job description.
+![AI Analysis](./screenshots/ai-analysis-1.png)
 
-### AI Analysis --- Additional Views
+![AI Analysis - Job Requirements](./screenshots/ai-analysis-2.png)
 
-![AI Analysis Results](screenshots/ai-analysis-2.png)
+![AI Analysis - Matching](./screenshots/ai-analysis-3.png)
 
-![AI Analysis Skills](screenshots/ai-analysis-3.png)
+![AI Analysis - Results](./screenshots/ai-analysis-4.png)
 
-![AI Analysis Recommendations](screenshots/ai-analysis-4.png)
+![AI Analysis - Match History](./screenshots/ai-analysis-5.png)
 
-![AI Analysis History](screenshots/ai-analysis-5.png)
-
-------------------------------------------------------------------------
+---
 
 ## 🏗️ Application Architecture
 
-``` text
-┌──────────────────────────────────────────────┐
-│                 React Frontend               │
-│                                              │
-│ Dashboard │ Jobs │ Applications │ Resumes   │
-│ AI Analysis │ Interviews │ Recruiter Messages│
-└──────────────────────┬───────────────────────┘
-                       │
-                       │ REST API / Axios
-                       ▼
-┌──────────────────────────────────────────────┐
-│                 FastAPI Backend              │
-│                                              │
-│ Authentication │ Jobs │ Resumes │ Interviews│
-│ AI Analysis │ Recruiter Messages             │
-└───────────────┬──────────────────┬───────────┘
-                │                  │
-                ▼                  ▼
-       ┌────────────────┐   ┌───────────────┐
-       │   PostgreSQL   │   │   Gmail API   │
-       │    Database    │   │   Integration │
-       └────────────────┘   └───────────────┘
+The project follows a frontend/backend architecture.
+
+```text
+                    ┌───────────────────────┐
+                    │      JobTracker       │
+                    │      Web Client       │
+                    └───────────┬───────────┘
+                                │
+                                │ HTTP / REST API
+                                ▼
+                    ┌───────────────────────┐
+                    │      FastAPI          │
+                    │       Backend         │
+                    └───────────┬───────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              │                 │                 │
+              ▼                 ▼                 ▼
+        ┌───────────┐    ┌──────────────┐   ┌─────────────┐
+        │ PostgreSQL│    │ Resume / AI  │   │ Integrations│
+        │ Database  │    │ Processing   │   │ Gmail / Jobs│
+        └───────────┘    └──────────────┘   └─────────────┘
 ```
 
-------------------------------------------------------------------------
+---
 
-## 🧰 Tech Stack
+## 🧰 Technology Stack
 
 ### Frontend
 
--   React
--   Vite
--   JavaScript / JSX
--   Axios
--   Chart.js
--   React Chart.js 2
--   CSS
+- React
+- JavaScript
+- HTML
+- CSS
+- Axios
+- Chart.js
+- React Chart.js 2
+- Vite
 
 ### Backend
 
--   Python
--   FastAPI
--   SQLAlchemy
--   Pydantic
--   JWT-based authentication
--   Resume document parsing
+- Python
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- PostgreSQL
+- JWT-based authentication
 
-### Database
+### Resume Processing
 
--   PostgreSQL
+- PDF processing
+- DOC/DOCX processing
+- Resume text extraction
+- Skill detection
+- Keyword extraction
+- Resume-to-job matching
 
-### AI / Resume Analysis
+### Integrations
 
--   Python-based skill extraction
--   Resume parsing
--   Job-description analysis
--   Skill matching
--   Keyword matching
--   Resume recommendations
+- Gmail / Google OAuth
+- External job APIs
+- Adzuna job API
+- Company / recruiter integrations
 
-### Integration & Development
+### Development Tools
 
--   Gmail / Google OAuth
--   Docker
--   Git
--   GitHub
--   Visual Studio Code
+- Git
+- GitHub
+- VS Code
+- Docker / Docker Compose
 
-------------------------------------------------------------------------
+---
 
 ## 📁 Project Structure
 
-``` text
+```text
 ai-job-tracker/
 │
 ├── backend/
@@ -331,11 +399,13 @@ ai-job-tracker/
 │   │   ├── routers/
 │   │   ├── models/
 │   │   ├── schemas/
+│   │   ├── services/
 │   │   └── ...
+│   │
 │   ├── uploads/
-│   ├── requirements.txt
+│   ├── .env.example
 │   ├── Dockerfile
-│   └── .env.example
+│   └── requirements.txt
 │
 ├── frontend/
 │   ├── src/
@@ -343,370 +413,616 @@ ai-job-tracker/
 │   │   ├── api.js
 │   │   ├── main.jsx
 │   │   └── styles.css
+│   │
 │   ├── package.json
 │   ├── package-lock.json
-│   ├── Dockerfile
-│   ├── index.html
-│   └── vite.config.js
+│   ├── vite.config.js
+│   └── index.html
 │
 ├── screenshots/
-│   ├── home.png
-│   ├── job-search.png
-│   ├── applications.png
-│   ├── interviews.png
 │   ├── ai-analysis-1.png
 │   ├── ai-analysis-2.png
 │   ├── ai-analysis-3.png
 │   ├── ai-analysis-4.png
-│   └── ai-analysis-5.png
+│   ├── ai-analysis-5.png
+│   ├── applications.png
+│   ├── dashboard.png
+│   ├── interviews.png
+│   └── job-search.png
 │
 ├── docker-compose.yml
-├── .gitignore
-├── GMAIL_SETUP.md
+├── Gmail_SETUP.md
 ├── PHASE2.md
 ├── PHASE3.md
-└── README.md
+├── README.md
+└── .gitignore
 ```
 
-------------------------------------------------------------------------
+---
 
-## ⚙️ Run Locally
+# 🚀 Getting Started
 
-### Prerequisites
+## Prerequisites
 
-Install the following before running the project:
+Make sure the following are installed:
 
--   Python 3.x
--   Node.js and npm
--   PostgreSQL
--   Git
+- Python 3.10+
+- Node.js 18+
+- npm
+- PostgreSQL
+- Git
 
 Docker can also be used if you prefer a containerized setup.
 
-------------------------------------------------------------------------
+---
 
 ## 1. Clone the Repository
 
-``` bash
+```bash
 git clone https://github.com/sc2939459-max/ai-job-tracker.git
+```
+
+Move into the project:
+
+```bash
 cd ai-job-tracker
 ```
 
-------------------------------------------------------------------------
+---
 
-## 2. Start the Backend
+# ⚙️ Backend Setup
 
-Open a terminal:
+Open a terminal and move into the backend:
 
-``` bash
+```bash
 cd backend
 ```
 
-Create and activate a virtual environment:
+### Create a Python virtual environment
 
-### macOS / Linux
+macOS / Linux:
 
-``` bash
+```bash
 python3 -m venv .venv
+```
+
+Activate it:
+
+```bash
 source .venv/bin/activate
 ```
 
-Install Python dependencies:
+Windows:
 
-``` bash
+```bash
+.venv\Scripts\activate
+```
+
+### Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-Configure the backend environment variables using the provided example:
+---
 
-``` bash
-cp .env.example .env
+## 🔐 Backend Environment Variables
+
+Create:
+
+```text
+backend/.env
 ```
 
-Update `.env` with your local database and integration configuration.
+Use `.env.example` as the template.
 
-Start FastAPI:
+Example:
 
-``` bash
-uvicorn app.main:app --reload
+```env
+FRONTEND_URL=http://localhost:5173
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8000/api/recruiter-messages/google/callback
+
+ADZUNA_APP_ID=your_adzuna_app_id
+ADZUNA_APP_KEY=your_adzuna_app_key
+
+COMPANY_API_KEY=your_company_api_key
 ```
 
-Backend:
+### Important
 
-``` text
+Never commit:
+
+```text
+backend/.env
+```
+
+to GitHub.
+
+Never put API keys, OAuth secrets, database passwords, or other credentials directly into source code.
+
+Use:
+
+```text
+.env
+```
+
+for local secrets and:
+
+```text
+.env.example
+```
+
+for safe placeholders.
+
+---
+
+# 🗄️ Database
+
+The application uses PostgreSQL.
+
+Create a database for the project, for example:
+
+```text
+jobtracker
+```
+
+Configure the database connection according to the backend configuration.
+
+Make sure PostgreSQL is running before starting the API.
+
+---
+
+# ▶️ Run the Backend
+
+From:
+
+```text
+backend/
+```
+
+run:
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+The API should be available at:
+
+```text
 http://localhost:8000
 ```
 
 FastAPI documentation:
 
-``` text
+```text
 http://localhost:8000/docs
 ```
 
-------------------------------------------------------------------------
+---
 
-## 3. Start the Frontend
+# 💻 Frontend Setup
 
-Open a second terminal:
+Open another terminal.
 
-``` bash
+Move into:
+
+```bash
 cd frontend
 ```
 
 Install dependencies:
 
-``` bash
+```bash
 npm install
 ```
 
-Start the Vite development server:
+Start the development server:
 
-``` bash
+```bash
 npm run dev
 ```
 
-Frontend:
+The frontend will normally be available at:
 
-``` text
+```text
 http://localhost:5173
 ```
 
-------------------------------------------------------------------------
+---
 
-## 🐳 Docker
+# 🔄 Running Frontend + Backend
 
-The repository also contains a `docker-compose.yml` for containerized
-development.
+You need two terminals.
 
-``` bash
+### Terminal 1 — Backend
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+### Terminal 2 — Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+---
+
+# 🔑 Authentication
+
+The application uses authenticated API requests.
+
+The frontend API client attaches the authentication token to requests using the HTTP Authorization header.
+
+Example:
+
+```text
+Authorization: Bearer <token>
+```
+
+Protected application data is associated with the authenticated user.
+
+---
+
+# 📊 Core Application Workflow
+
+The primary workflow is:
+
+```text
+                    ┌──────────────┐
+                    │   Dashboard  │
+                    └──────┬───────┘
+                           │
+          ┌────────────────┼─────────────────┐
+          │                │                 │
+          ▼                ▼                 ▼
+    ┌───────────┐   ┌─────────────┐   ┌───────────┐
+    │ Search    │   │ Applications│   │ Resumes   │
+    │ Jobs      │   │             │   │           │
+    └─────┬─────┘   └──────┬──────┘   └─────┬─────┘
+          │                │                 │
+          │                ▼                 │
+          │          ┌─────────────┐         │
+          │          │ Interviews  │         │
+          │          └─────────────┘         │
+          │                                  │
+          └──────────────┐    ┌──────────────┘
+                         ▼    ▼
+                    ┌──────────────┐
+                    │ AI Analysis  │
+                    └──────┬───────┘
+                           │
+                           ▼
+                 Resume-to-Job Match
+                           │
+                           ▼
+                  Skill Gap Analysis
+```
+
+---
+
+# 🤖 Resume Matching Workflow
+
+```text
+1. Select Resume
+        ↓
+2. Paste Job Description
+        ↓
+3. Analyze Job Requirements
+        ↓
+4. Detect Technical Skills
+        ↓
+5. Detect Job Keywords
+        ↓
+6. Match Resume
+        ↓
+7. Calculate Score
+        ↓
+8. Display Matched Skills
+        ↓
+9. Display Missing Skills
+        ↓
+10. Store Match History
+```
+
+---
+
+# 📧 Gmail Integration Workflow
+
+The recruiter-message integration follows this general workflow:
+
+```text
+Google Account
+      ↓
+OAuth Authorization
+      ↓
+Gmail Access
+      ↓
+Message Synchronization
+      ↓
+Recruiter Email Classification
+      ↓
+Application Matching
+      ↓
+Application Status Update
+```
+
+The integration can identify relevant signals such as:
+
+```text
+Application Received
+Application Under Review
+Interview Invitation
+Offer
+Rejection
+```
+
+Google OAuth configuration is documented separately in:
+
+```text
+Gmail_SETUP.md
+```
+
+---
+
+# 🧪 Development
+
+Frontend development server:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Backend development server:
+
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+```
+
+For frontend production builds:
+
+```bash
+cd frontend
+npm run build
+```
+
+Preview the production build:
+
+```bash
+npm run preview
+```
+
+---
+
+# 🐳 Docker
+
+The repository also contains:
+
+```text
+docker-compose.yml
+```
+
+If Docker is configured for your environment, the application can be started using:
+
+```bash
 docker compose up --build
 ```
 
-To stop the containers:
+Stop the containers with:
 
-``` bash
+```bash
 docker compose down
 ```
 
-Use the Docker configuration in the repository as the source of truth
-for the services and environment configuration.
+---
 
-------------------------------------------------------------------------
+# 🔒 Security Notes
 
-## 🔐 Environment Variables & Security
+This repository intentionally excludes sensitive local configuration.
 
-Do **not** commit real credentials to GitHub.
+Do not commit:
 
-Keep sensitive values inside local `.env` files.
-
-Typical protected configuration includes:
-
-``` text
-DATABASE_URL
-SECRET_KEY
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
-GOOGLE_REDIRECT_URI
-GOOGLE_TOKEN_ENCRYPTION_KEY
-FRONTEND_URL
-```
-
-The repository should contain placeholder values in `.env.example`, not
-production secrets.
-
-Also keep these out of Git:
-
-``` text
+```text
 .env
-.venv/
-node_modules/
-backend/uploads/
+*.pem
+*.key
+credentials.json
+client_secret.json
+database passwords
+OAuth client secrets
+API keys
+JWT secrets
 ```
 
-If an OAuth client secret or other credential is ever committed
-accidentally, rotate/revoke it immediately in the corresponding provider
-console.
+If a secret is accidentally committed:
 
-------------------------------------------------------------------------
+1. Remove it from the working tree.
+2. Rotate/revoke the exposed credential.
+3. Remove it from Git history when necessary.
+4. Add the secret to `.gitignore`.
+5. Use an environment variable instead.
 
-## 🔄 Job Application Workflow
+---
 
-The platform is designed around a complete job-search lifecycle:
+# 🛣️ Roadmap
 
-``` text
-                    ┌──────────────┐
-                    │   Job Search │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Wishlist   │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Applying   │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │    Applied   │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Screening  │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │   Interview  │
-                    └──────┬───────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │     Offer    │
-                    └──────────────┘
+Potential future improvements include:
 
-                 Other outcomes:
-               Rejected / Withdrawn
+- [ ] Advanced AI resume rewriting
+- [ ] Job-specific resume generation
+- [ ] Additional resume templates
+- [ ] More job-board integrations
+- [ ] Improved job deduplication
+- [ ] Automated application confirmation detection
+- [ ] Advanced recruiter email classification
+- [ ] More detailed career analytics
+- [ ] Interview feedback tracking
+- [ ] Application reminders
+- [ ] Follow-up reminders
+- [ ] Advanced dashboard analytics
+- [ ] Production deployment
+- [ ] Automated testing
+- [ ] CI/CD pipeline
+
+---
+
+# 🎯 Project Goals
+
+The main goals of this project are to demonstrate practical experience with:
+
+- Full-stack web development
+- REST API development
+- React application architecture
+- Python backend development
+- Database design
+- Authentication
+- File processing
+- Resume parsing
+- Data extraction
+- Skill matching
+- API integrations
+- OAuth
+- Application workflow design
+- Responsive UI development
+- Git and GitHub workflows
+
+---
+
+# 💡 Why This Project?
+
+Job searching often involves multiple disconnected tools:
+
+```text
+Job Boards
+   +
+Spreadsheets
+   +
+Email
+   +
+Resume Files
+   +
+Interview Notes
+   +
+Application Tracking
 ```
 
-------------------------------------------------------------------------
+AI Job Tracker brings these activities into a single workspace.
 
-## 🧠 AI Matching Workflow
+The goal is not simply to store job applications, but to create a structured workflow that helps users understand:
 
-``` text
-Resume
-   │
-   ▼
-Resume Parsing
-   │
-   ▼
-Skill Extraction
-   │
-   │
-   ├───────────────┐
-   │               │
-   ▼               ▼
-Job Description   Keywords
-   │               │
-   ▼               │
-Required Skills    │
-   │               │
-   └───────┬───────┘
-           ▼
-     Resume ↔ Job
-        Matching
-           │
-           ▼
-      Match Score
-           │
-     ┌─────┼─────┐
-     ▼     ▼     ▼
-  Matched Missing Recommendations
-  Skills  Skills
+```text
+What jobs should I apply for?
+        ↓
+How well does my resume match?
+        ↓
+What skills am I missing?
+        ↓
+Which applications are active?
+        ↓
+What interviews are coming?
+        ↓
+How should I prepare?
 ```
 
-------------------------------------------------------------------------
+---
 
-## 📌 AI Match History
+# 📈 Current Project Status
 
-The AI matching workflow is designed so that the same resume and the
-same job description represent one logical match.
+### Current
 
-When the same combination is analyzed again, the existing match can be
-updated instead of continually creating duplicate history entries.
+- ✅ React frontend
+- ✅ FastAPI backend
+- ✅ PostgreSQL integration
+- ✅ User authentication
+- ✅ Job search
+- ✅ Application tracking
+- ✅ Resume management
+- ✅ Resume-to-job matching
+- ✅ Skill detection
+- ✅ Missing-skill identification
+- ✅ Match history
+- ✅ Interview management
+- ✅ Interview preparation
+- ✅ Gmail integration workflow
+- ✅ Project screenshots
+- ✅ Docker configuration
 
-This keeps the Recent Match Analyses view cleaner and more useful.
+### In Progress / Future
 
-------------------------------------------------------------------------
+- 🚧 Advanced AI resume improvement
+- 🚧 More automated application tracking
+- 🚧 Additional integrations
+- 🚧 Production deployment
+- 🚧 Automated testing and CI/CD
 
-## 📚 Documentation
+---
 
-Additional project documentation is available in the repository:
+# 👨‍💻 Author
 
--   `GMAIL_SETUP.md` --- Gmail integration setup
--   `PHASE2.md` --- Phase 2 project documentation
--   `PHASE3.md` --- Phase 3 project documentation
+## Sunil Maddipatla
 
-These documents contain development-specific setup and implementation
-details.
+Computer Science graduate interested in:
 
-------------------------------------------------------------------------
+- Python Development
+- Data Analytics
+- Software Engineering
+- Full-Stack Development
+- AI-powered applications
 
-## 🧪 Development Notes
+### Technical Skills
 
-This project is actively developed and contains multiple connected
-workflows across the frontend and backend.
-
-When making changes:
-
-1.  Keep frontend and backend API contracts synchronized.
-2.  Protect authenticated endpoints.
-3.  Do not commit secrets.
-4.  Test application-status transitions.
-5.  Verify resume uploads with supported document types.
-6.  Test AI matching with different resume/job combinations.
-7.  Verify Gmail OAuth configuration separately from application logic.
-
-------------------------------------------------------------------------
-
-## 🎯 Project Goals
-
-The long-term goal of AI Job Tracker is to provide a single workspace
-where a candidate can:
-
-``` text
-Discover
-   ↓
-Evaluate
-   ↓
-Track
-   ↓
-Apply
-   ↓
-Analyze
-   ↓
-Prepare
-   ↓
-Interview
-   ↓
-Receive Outcome
+```text
+Python
+SQL / MySQL
+PostgreSQL
+Pandas
+JavaScript
+React
+HTML
+CSS
+FastAPI
+SQLAlchemy
+Git
+GitHub
+Chart.js
+REST APIs
+Data Analysis
+Data Visualization
 ```
 
-The platform combines job tracking, resume intelligence, application
-management, interview preparation, and recruiter communication into one
-workflow.
+---
 
-------------------------------------------------------------------------
+# ⭐ Support the Project
 
-## 👨‍💻 Author
+If you find this project useful or interesting, consider giving the repository a ⭐ on GitHub.
 
-### Sunil Maddipatla
+Your feedback and suggestions are welcome.
 
-Computer Science graduate focused on:
+---
 
--   Python
--   SQL
--   Data Analytics
--   Full-Stack Development
--   AI-powered applications
+# 📄 License
 
-AI Job Tracker was developed as a full-stack project to explore
-practical software engineering, data-driven job matching, resume
-analysis, application tracking, and third-party API integration.
+A specific open-source license has not yet been added to this repository.
 
-------------------------------------------------------------------------
+If the project is intended to be distributed as open source, a license such as MIT can be added in the future.
 
-## ⭐ If You Find This Project Useful
+---
 
-If this project is useful or interesting, consider starring the
-repository and exploring the implementation.
-
-------------------------------------------------------------------------
-
-## 📄 License
-
-Add a project license here when you are ready to publish the repository
-under a specific open-source license.
+<p align="center">
+  <strong>AI Job Tracker</strong><br>
+  A focused workspace for a smarter and more organized job search.
+</p>
