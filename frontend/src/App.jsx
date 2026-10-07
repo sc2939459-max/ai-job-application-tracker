@@ -55,7 +55,59 @@ const JOB_ROLE_OPTIONS = [
   "Product Analyst",
   "Product Manager",
   "Cybersecurity Analyst",
+  "Security Engineer",
+  "Site Reliability Engineer",
+  "iOS Developer",
+  "Android Developer",
+  "Mobile App Developer",
+  "UI/UX Designer",
+  "UX Designer",
+  "Technical Writer",
+  "Database Administrator",
+  "Network Engineer",
+  "Systems Administrator",
+  "Salesforce Developer",
+  ".NET Developer",
+  "PHP Developer",
+  "Go Developer",
+  "Rust Developer",
+  "ETL Developer",
+  "Data Warehouse Engineer",
+  "Research Scientist",
+  "Prompt Engineer",
+  "Technical Project Manager",
+  "Scrum Master",
   "Other",
+];
+
+const RECOMMENDED_JOB_LOCATIONS = [
+  "Bengaluru",
+  "Hyderabad",
+  "Pune",
+  "Mumbai",
+  "Delhi",
+  "New Delhi",
+  "Chennai",
+  "Kolkata",
+  "Ahmedabad",
+  "Gurugram",
+  "Noida",
+  "Kochi",
+  "Thiruvananthapuram",
+  "Jaipur",
+  "Chandigarh",
+  "Indore",
+  "Coimbatore",
+  "Mysuru",
+  "Visakhapatnam",
+  "Nagpur",
+  "Surat",
+  "Vadodara",
+  "Bhopal",
+  "Lucknow",
+  "Bhubaneswar",
+  "Remote",
+  "All India",
 ];
 
 
@@ -2258,7 +2310,87 @@ function RecommendedJobsPage({ user, onNavigate }) {
   const [resume, setResume] = useState(null);
   const search = async (event) => { event?.preventDefault(); setLoading(true); try { const [r, rr] = await Promise.all([api.get("/job-market/search", { params:{ query, location, country:"India", page:1, results_per_page:20 }}), api.get("/resumes")]); const list=Array.isArray(rr.data)?rr.data:[]; const latest=[...list].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0]||null; setResume(latest); const skills=new Set((latest?.skills||[]).map((s)=>String(s).toLowerCase().trim())); const ranked=(r.data?.jobs||[]).map((job)=>{const js=[...(job.skills||[])].map((s)=>String(s).toLowerCase().trim()); const match=js.length?Math.round(js.filter((s)=>skills.has(s)).length/new Set(js).size*100):0; return {...job, _match:match};}).sort((a,b)=>b._match-a._match); setJobs(ranked); } catch { setJobs([]); } finally { setLoading(false); } };
   useEffect(() => { search(); }, []);
-  return <div className="phase1-page"><section className="panel opportunities-panel"><div className="section-heading"><div><div className="eyebrow">OPPORTUNITIES</div><h2>Recommended jobs</h2><p className="muted-text">Based on your latest resume skills and selected search.</p></div></div><form className="opportunity-search" onSubmit={search}><input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Job role"/><input value={location} onChange={(e)=>setLocation(e.target.value)} placeholder="Location"/><button type="submit" className="action-blue-button recommended-search-button">Search</button></form>{resume && <div className="opportunity-note">Using resume: <strong>{resume.name}</strong></div>}{loading ? <div className="loading">Finding recommendations…</div> : jobs.length ? <div className="recommendation-list">{jobs.slice(0,8).map((job)=><article className="recommendation-row" key={`${job.id}-${job.source}`}><div><strong>{job.title}</strong><span>{job.company} · {job.location || "Location not specified"}</span><small>{(job.skills||[]).slice(0,6).join(" · ")}</small></div><div className="recommendation-actions"><b>{job._match}% match</b><button className="secondary" onClick={()=>job.url&&window.open(job.url,"_blank","noopener,noreferrer")}>View</button><button className="primary" onClick={()=>onNavigate("applications")}>Track</button></div></article>)}</div> : <div className="empty">No recommendations found.</div>}</section></div>;
+  return (
+    <div className="phase1-page recommended-jobs-page">
+      <section className="panel opportunities-panel">
+        <div className="recommended-jobs-heading">
+          <div>
+            <div className="eyebrow">OPPORTUNITIES</div>
+            <h2>Recommended jobs</h2>
+            <p className="muted-text">Find opportunities that fit your resume and skills.</p>
+          </div>
+          <span className="recommended-live-badge"><i /> Live job search</span>
+        </div>
+
+        <form className="opportunity-search" onSubmit={search}>
+          <label>
+            <span>Job role</span>
+            <MenuSelect
+              value={query}
+              onChange={(value) => setQuery(String(value))}
+              options={JOB_ROLE_OPTIONS.map((role) => ({ value: role.trim(), label: role.trim() }))}
+              placeholder="Choose a job role"
+            />
+          </label>
+          <label>
+            <span>Location</span>
+            <MenuSelect
+              value={location}
+              onChange={(value) => setLocation(String(value))}
+              options={RECOMMENDED_JOB_LOCATIONS.map((place) => ({ value: place, label: place }))}
+              placeholder="Choose a location"
+            />
+          </label>
+          <button type="submit" className="action-blue-button recommended-search-button" disabled={loading}>
+            {loading ? "Searching…" : "Search jobs"}
+          </button>
+        </form>
+
+        {resume && (
+          <div className="opportunity-note">
+            <span className="recommended-resume-icon">✓</span>
+            <span>Personalized with resume <strong>{resume.name}</strong></span>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="recommended-loading"><span className="spinner" /> Finding jobs for you…</div>
+        ) : jobs.length ? (
+          <div className="recommendation-list">
+            {jobs.slice(0, 8).map((job) => (
+              <article className="recommendation-row" key={`${job.id}-${job.source}`}>
+                <div className="recommended-job-info">
+                  <strong>{job.title}</strong>
+                  <span>{job.company} <i>·</i> {job.location || "Location not specified"}</span>
+                  {!!job.skills?.length && <small>{job.skills.slice(0, 6).join(" · ")}</small>}
+                </div>
+                <div className="recommendation-actions">
+                  <b className="recommended-match">{job._match}% <small>match</small></b>
+                  <button
+                    type="button"
+                    className="recommended-view-button"
+                    onClick={() => job.url && window.open(job.url, "_blank", "noopener,noreferrer")}
+                    disabled={!job.url}
+                  >
+                    View job
+                  </button>
+                  <button type="button" className="recommended-track-button" onClick={() => onNavigate("applications")}>
+                    Track
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="recommended-empty">
+            <span aria-hidden="true">⌕</span>
+            <strong>No recommendations found</strong>
+            <p>Try another job role or location to broaden your search.</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function RecruiterMessagesPage({ user }) {
@@ -5942,7 +6074,10 @@ function Resumes() {
       );
       data.append("skills", upload.skills);
 
-      await api.post("/resumes/upload", data);
+      const uploadResponse = await api.post(
+        "/resumes/upload",
+        data
+      );
 
       setUpload({
         name: "",
@@ -5955,8 +6090,37 @@ function Resumes() {
        */
       form.reset();
 
-      setMessage("Resume uploaded successfully.");
+      let uploadMessage = "Resume uploaded successfully.";
 
+      try {
+        const analysisResponse = await api.post(
+          `/resumes/${uploadResponse.data.id}/analyze`
+        );
+        const detectedSkills = Array.isArray(
+          analysisResponse.data?.automatic_skills
+        )
+          ? analysisResponse.data.automatic_skills
+          : [];
+
+        uploadMessage = detectedSkills.length
+          ? `Resume uploaded. Automatically detected ${detectedSkills.length} skill${
+              detectedSkills.length === 1 ? "" : "s"
+            }: ${detectedSkills.join(", ")}.`
+          : "Resume uploaded, but no skills were detected. You can add them in the optional skills field.";
+      } catch (analysisError) {
+        console.error("Resume skill detection failed:", analysisError);
+
+        const detail = analysisError.response?.data?.detail;
+        const reason = Array.isArray(detail)
+          ? detail.map((item) => item.msg).join(", ")
+          : detail;
+
+        uploadMessage = `Resume uploaded, but automatic skill detection failed${
+          reason ? `: ${reason}` : "."
+        }`;
+      }
+
+      setMessage(uploadMessage);
       await load();
     } catch (err) {
       console.error("Resume upload failed:", err);
@@ -6246,7 +6410,7 @@ function Resumes() {
 
             <input
               type="text"
-              placeholder="Skills: Python, SQL, React"
+              placeholder="Optional skills (e.g. Python, SQL, React)"
               value={upload.skills}
               onChange={(event) =>
                 setUpload({
@@ -6256,6 +6420,9 @@ function Resumes() {
                 })
               }
             />
+            <small>
+              Skills are detected automatically from readable PDF and DOCX resumes.
+            </small>
 
             <label
               className="resume-file-picker"

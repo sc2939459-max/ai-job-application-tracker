@@ -17,6 +17,8 @@ services:
 
   backend:
     build: ./backend
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/jobtracker
       SECRET_KEY: change-this-in-production
